@@ -1,0 +1,12 @@
+{
+  "neoProxy": {
+    "url": "https://neoproxy.org",
+    "domain": ".neoproxy.org",
+    "cookie": "",
+    "service": "https://neoproxy.org/services/b9a8283c7fd7407bb9c13e04af5b0fad"
+  },
+  "email": {
+    "address": "985759262@qq.com",
+    "token": ""
+  }
+}
