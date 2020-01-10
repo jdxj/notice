@@ -78,7 +78,7 @@ func (flow *Flow) NotifyAt11pm() {
 
 	for {
 		now := time.Now()
-		tomorrow11pm := time.Unix((now.Unix()/86400+1)*86400, 0).Add(23 * time.Hour)
+		tomorrow11pm := time.Unix((now.Unix()/86400+1)*86400, 0).Add(15 * time.Hour)
 		dur := tomorrow11pm.Sub(now)
 		timer.Reset(dur)
 
