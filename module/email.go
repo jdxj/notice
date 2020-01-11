@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"net/smtp"
 
-	"github.com/astaxie/beego/logs"
-
 	"github.com/jordan-wright/email"
 )
 
@@ -26,7 +24,7 @@ type EmailSender struct {
 	email  *email.Email
 }
 
-func (es *EmailSender) SendMsg(subject, content string) {
+func (es *EmailSender) SendMsg(subject, content string) error {
 	e := es.email
 	addr := es.config.Address
 	token := es.config.Token
@@ -37,8 +35,5 @@ func (es *EmailSender) SendMsg(subject, content string) {
 	e.Subject = subject
 	e.Text = []byte(content)
 
-	err := e.Send("smtp.qq.com:587", smtp.PlainAuth("", addr, token, "smtp.qq.com"))
-	if err != nil {
-		logs.Error("%s", err)
-	}
+	return e.Send("smtp.qq.com:587", smtp.PlainAuth("", addr, token, "smtp.qq.com"))
 }
