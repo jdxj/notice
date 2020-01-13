@@ -24,7 +24,11 @@ type EmailSender struct {
 	email  *email.Email
 }
 
-func (es *EmailSender) SendMsg(subject, content string) error {
+func (es *EmailSender) SendMsgString(subject, content string) error {
+	return es.SendMsgBytes(subject, []byte(content))
+}
+
+func (es *EmailSender) SendMsgBytes(subject string, content []byte) error {
 	e := es.email
 	addr := es.config.Address
 	token := es.config.Token
@@ -33,7 +37,7 @@ func (es *EmailSender) SendMsg(subject, content string) error {
 	e.To = []string{addr}
 
 	e.Subject = subject
-	e.Text = []byte(content)
+	e.Text = content
 
 	return e.Send("smtp.qq.com:587", smtp.PlainAuth("", addr, token, "smtp.qq.com"))
 }

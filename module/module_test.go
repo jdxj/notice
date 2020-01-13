@@ -30,5 +30,5 @@ func TestEmailSender_SendMsg(t *testing.T) {
 		t.Fatalf("%s", err)
 	}
 
-	es.SendMsg("test", "hello")
+	es.SendMsgString("test", "hello")
 }

@@ -44,20 +44,33 @@ const (
 	DailyDosageLimit     = 600
 )
 
+const (
+	HomePage = "https://neoproxy.org"
+	NewsPage = "https://neoproxy.org/news"
+)
+
 type Flow struct {
 	config      *module.NeoProxyConfig
 	client      *http.Client
 	emailSender *module.EmailSender
 
-	lables []string
-	stat   map[string]float64
-	sample []float64
+	lables       []string
+	stat         map[string]float64
+	sample       []float64
+	lastNewsDate time.Time
 
 	stop chan struct{}
 	wg   *sync.WaitGroup
 }
 
 func (flow *Flow) Start() {
+	// 这里使用通知的目的是: 如果程序由 systemd 重启过,
+	// 说明发生了异常终止, 所以需要通知.
+	subject := "notice start"
+	if err := flow.emailSender.SendMsgString(subject, time.Now().Format(time.RFC1123)); err != nil {
+		logs.Error("%s", err)
+	}
+
 	wg := flow.wg
 
 	wg.Add(1)
@@ -75,6 +88,12 @@ func (flow *Flow) Start() {
 	wg.Add(1)
 	go func() {
 		flow.NotifyExceedDailyDosageLimit()
+		wg.Done()
+	}()
+
+	wg.Add(1)
+	go func() {
+		flow.NotifyLastNews()
 		wg.Done()
 	}()
 
@@ -104,9 +123,13 @@ func (flow *Flow) NotifyAt11pm() {
 		case <-flow.stop:
 			logs.Info("stop notify at 11pm")
 			return
+
 		case <-timer.C:
 			content := fmt.Sprintf("当日用量: %s, 总用量: %s", flow.TodayUsed(), flow.TotalUsed())
-			flow.emailSender.SendMsg(subject, content)
+			err := flow.emailSender.SendMsgString(subject, content)
+			if err != nil {
+				logs.Error("%s", err)
+			}
 		}
 	}
 }
@@ -135,7 +158,7 @@ func (flow *Flow) NotifyExceedDailyDosageLimit() {
 
 			if flow.todayUsed() > DailyDosageLimit && !alreadyNotified {
 				content := fmt.Sprintf("当日用量: %s, 总用量: %s", flow.TodayUsed(), flow.TotalUsed())
-				if err := flow.emailSender.SendMsg(subject, content); err != nil {
+				if err := flow.emailSender.SendMsgString(subject, content); err != nil {
 					logs.Error("error when send exceed daily dosage notice: %s", err)
 				} else {
 					alreadyNotified = true
@@ -158,6 +181,7 @@ func (flow *Flow) CollectingSamples() {
 		case <-flow.stop:
 			logs.Info("stop collecting samples")
 			return
+
 		case <-ticker.C:
 			flow.update()
 		}
@@ -236,4 +260,111 @@ func (flow *Flow) TodayUsed() string {
 func (flow *Flow) todayUsed() float64 {
 	today := time.Now().Format("Jan 02")
 	return flow.stat[today]
+}
+
+func (flow *Flow) NotifyLastNews() {
+	subject := "新的消息"
+
+	ticker := time.NewTicker(time.Hour)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-flow.stop:
+			logs.Info("stop notify last news")
+			return
+
+		case <-ticker.C:
+			news, err := flow.crawlLastNews()
+			if err != nil {
+				logs.Error("%s", err)
+				continue
+			}
+			if flow.lastNewsDate == news.UpdateTime {
+				continue
+			}
+			flow.lastNewsDate = news.UpdateTime
+
+			err = flow.emailSender.SendMsgString(subject, news.String())
+			if err != nil {
+				logs.Error("%s", err)
+			}
+		}
+	}
+}
+
+func (flow *Flow) crawlLastNews() (*News, error) {
+	newsURLs, err := flow.crawlNewsList()
+	if err != nil {
+		return nil, err
+	}
+	if len(newsURLs) <= 0 {
+		return nil, fmt.Errorf("no news")
+	}
+
+	lastNewsURL := newsURLs[0]
+	resp, err := flow.client.Get(lastNewsURL)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	selection := doc.Find(".card-body")
+
+	// 解析 title
+	title := selection.Find("h3").Text()
+
+	// 解析 update time
+	dateStr := selection.Find("small").Text()
+	dateStrIdx := strings.Index(dateStr, "20")
+	if dateStrIdx < 0 {
+		return nil, fmt.Errorf("not found news's date: %s", lastNewsURL)
+	}
+	dateStr = dateStr[dateStrIdx:]
+	date, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		return nil, err
+	}
+
+	// 解析 content
+	content := selection.Find("p").Text()
+
+	news := &News{
+		Title:      title,
+		UpdateTime: date,
+		Content:    content,
+	}
+	return news, nil
+}
+
+func (flow *Flow) crawlNewsList() ([]string, error) {
+	resp, err := flow.client.Get(NewsPage)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	selection := doc.Find(".list-group-item-action")
+
+	var newsURLs []string
+	selection.Each(func(i int, sel *goquery.Selection) {
+		newsURL, exist := sel.Attr("href")
+		if !exist {
+			return
+		}
+
+		newsURL = HomePage + newsURL
+		newsURLs = append(newsURLs, newsURL)
+	})
+
+	return newsURLs, nil
 }
