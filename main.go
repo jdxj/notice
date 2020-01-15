@@ -12,7 +12,7 @@ import (
 
 func main() {
 	logs.SetLogger(logs.AdapterFile,
-		`{"filename":"notice.log","level":7,"maxlines":0,"maxsize":0,"daily":true,"maxdays":10,"color":true}`)
+		`{"filename":"notice.log","level":7,"maxlines":0,"maxsize":0,"daily":true,"maxdays":3,"color":true}`)
 
 	config, err := module.ReadConfig()
 	if err != nil {
@@ -34,7 +34,6 @@ func main() {
 		return
 	}
 	flow.Start()
-	defer flow.Stop()
 
 	sigs := make(chan os.Signal, 2)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -43,4 +42,13 @@ func main() {
 	case <-sigs:
 		logs.Info("receive stop signal")
 	}
+
+	flow.Stop()
+
+	if err := module.WriteConfig(config); err != nil {
+		logs.Error("%s", err)
+	} else {
+		logs.Info("write config success")
+	}
+	logs.Info("notice stopped\n")
 }

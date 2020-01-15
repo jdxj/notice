@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"notice/module"
 	"strconv"
 	"strings"
@@ -120,10 +121,15 @@ func (flow *Flow) Stop() {
 	close(flow.stop)
 	flow.wg.Wait()
 
+	if err := flow.serializeCookie(); err != nil {
+		logs.Error("%s", err)
+	} else {
+		logs.Info("serialize cookies success")
+	}
+
 	logs.Info("flow stopped")
 }
 
-// todo: 实现
 func (flow *Flow) VerifyLogin() error {
 	resp, err := flow.client.Get(LoginPage)
 	if err != nil {
@@ -154,14 +160,31 @@ func (flow *Flow) VerifyLogin() error {
 
 func (flow *Flow) NotifyAt11pm() {
 	subject := "用量统计"
-
 	timer := time.NewTimer(5 * time.Second)
 	defer timer.Stop()
 
+	// 当天通知一次
+	now := time.Now()
+	today11pm := time.Unix(now.Unix()/86400*86400, 0).Add(15 * time.Hour)
+	dur := today11pm.Sub(now)
+	if dur <= 0 {
+		flow.sendDosage(subject)
+	} else {
+		timer.Reset(dur)
+		select {
+		case <-flow.stop:
+			logs.Info("stop notify at 11pm")
+			return
+
+		case <-timer.C:
+			flow.sendDosage(subject)
+		}
+	}
+
 	for {
-		now := time.Now()
+		now = time.Now()
 		tomorrow11pm := time.Unix((now.Unix()/86400+1)*86400, 0).Add(15 * time.Hour)
-		dur := tomorrow11pm.Sub(now)
+		dur = tomorrow11pm.Sub(now)
 		timer.Reset(dur)
 
 		select {
@@ -170,12 +193,16 @@ func (flow *Flow) NotifyAt11pm() {
 			return
 
 		case <-timer.C:
-			content := fmt.Sprintf("当日用量: %s, 总用量: %s", flow.TodayUsed(), flow.TotalUsed())
-			err := flow.emailSender.SendMsgString(subject, content)
-			if err != nil {
-				logs.Error("%s", err)
-			}
+			flow.sendDosage(subject)
 		}
+	}
+}
+
+func (flow *Flow) sendDosage(subject string) {
+	content := fmt.Sprintf("当日用量: %s, 总用量: %s", flow.TodayUsed(), flow.TotalUsed())
+	err := flow.emailSender.SendMsgString(subject, content)
+	if err != nil {
+		logs.Error("%s", err)
 	}
 }
 
@@ -202,13 +229,9 @@ func (flow *Flow) NotifyExceedDailyDosageLimit() {
 			}
 
 			if flow.todayUsed() > DailyDosageLimit && !alreadyNotified {
-				content := fmt.Sprintf("当日用量: %s, 总用量: %s", flow.TodayUsed(), flow.TotalUsed())
-				if err := flow.emailSender.SendMsgString(subject, content); err != nil {
-					logs.Error("error when send exceed daily dosage notice: %s", err)
-				} else {
-					alreadyNotified = true
-					notificationTime = time.Now()
-				}
+				flow.sendDosage(subject)
+				alreadyNotified = true
+				notificationTime = time.Now()
 			}
 		}
 	}
@@ -316,6 +339,25 @@ func (flow *Flow) todayUsed() float64 {
 	flow.mutex.Unlock()
 
 	return todayUsed
+}
+
+func (flow *Flow) serializeCookie() error {
+	URL, err := url.Parse(flow.config.URL)
+	if err != nil {
+		return err
+	}
+	cookies := flow.client.Jar.Cookies(URL)
+
+	var cookieStr string
+	for i, cookie := range cookies {
+		part := fmt.Sprintf("%s=%s", cookie.Name, cookie.Value)
+		cookieStr += part
+		if i != len(cookies)-1 {
+			cookieStr += "; "
+		}
+	}
+	flow.config.Cookie = cookieStr
+	return nil
 }
 
 func (flow *Flow) NotifyLastNews() {

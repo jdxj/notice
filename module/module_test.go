@@ -32,3 +32,14 @@ func TestEmailSender_SendMsg(t *testing.T) {
 
 	es.SendMsgString("test", "hello")
 }
+
+func TestWriteConfig(t *testing.T) {
+	config, err := ReadConfig()
+	if err != nil {
+		t.Fatalf("%s", err)
+	}
+	err = WriteConfig(config)
+	if err != nil {
+		t.Fatalf("%s", err)
+	}
+}

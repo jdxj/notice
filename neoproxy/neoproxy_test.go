@@ -1,6 +1,7 @@
 package neoproxy
 
 import (
+	"encoding/json"
 	"fmt"
 	"notice/module"
 	"sync"
@@ -112,4 +113,34 @@ func TestDecodeEmail(t *testing.T) {
 	if address != "985759262@qq.com" {
 		t.Fatalf("decode failed\n")
 	}
+}
+
+func TestFlow_SerializeCookie(t *testing.T) {
+	cfg, err := module.ReadConfig()
+	if err != nil {
+		t.Fatalf("%s\n", err)
+	}
+	flow, err := NewFlow(cfg.NeoProxy, cfg.Email)
+	if err != nil {
+		t.Fatalf("%s\n", err)
+	}
+
+	cookieStr, err := flow.serializeCookie()
+	if err != nil {
+		t.Fatalf("%s", err)
+	}
+	fmt.Println(cookieStr)
+}
+
+func TestJsonMarshal(t *testing.T) {
+	cfg, err := module.ReadConfig()
+	if err != nil {
+		t.Fatalf("%s\n", err)
+	}
+
+	data, err := json.MarshalIndent(cfg, "", "  ")
+	if err != nil {
+		t.Fatalf("%s\n", err)
+	}
+	fmt.Printf("%s", data)
 }
