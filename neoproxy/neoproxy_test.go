@@ -82,9 +82,34 @@ func TestCrawlNews(t *testing.T) {
 	fmt.Printf("%s\n", news)
 }
 
+func TestFlow_VerifyLogin(t *testing.T) {
+	cfg, err := module.ReadConfig()
+	if err != nil {
+		t.Fatalf("%s\n", err)
+	}
+	flow, err := NewFlow(cfg.NeoProxy, cfg.Email)
+	if err != nil {
+		t.Fatalf("%s\n", err)
+	}
+
+	if err := flow.VerifyLogin(); err != nil {
+		t.Fatalf("%s", err)
+	}
+}
+
 func TestTimeEqual(t *testing.T) {
 	now := time.Now()
 	if now != now {
 		t.Fatalf("%s", "time can not compare")
+	}
+}
+
+func TestDecodeEmail(t *testing.T) {
+	address, err := decodeEmail("a990919c9e9c909b9f9be9d8d887cac6c4")
+	if err != nil {
+		t.Fatalf("%s\n", err)
+	}
+	if address != "985759262@qq.com" {
+		t.Fatalf("decode failed\n")
 	}
 }

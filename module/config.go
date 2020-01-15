@@ -15,6 +15,7 @@ type NeoProxyConfig struct {
 	Domain  string `json:"domain"`
 	Cookie  string `json:"cookie"`
 	Service string `json:"service"`
+	Email   string `json:"email"`
 }
 
 func ReadConfig() (*Config, error) {

@@ -1,6 +1,7 @@
 package neoproxy
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"notice/module"
@@ -39,26 +40,32 @@ func NewFlow(npc *module.NeoProxyConfig, ec *module.EmailConfig) (*Flow, error) 
 
 const (
 	CollectingFrequency  = time.Minute
-	SamplesLimit         = 1440 // 24h * 60m
+	SamplesLimit         = 1440 // 24 * 60m
 	NotificationInterval = 10 * time.Minute
 	DailyDosageLimit     = 600
+	LoginRetryLimit      = 3
 )
 
 const (
-	HomePage = "https://neoproxy.org"
-	NewsPage = "https://neoproxy.org/news"
+	HomePage  = "https://neoproxy.org"
+	NewsPage  = "https://neoproxy.org/news"
+	LoginPage = "https://neoproxy.org/user"
+)
+
+var (
+	ErrLoginFailed = errors.New("login failed")
 )
 
 type Flow struct {
-	config      *module.NeoProxyConfig
 	client      *http.Client
 	emailSender *module.EmailSender
+	config      *module.NeoProxyConfig
 
 	// mutex 保护以下字段
 	mutex  sync.Mutex
 	lables []string
-	stat   map[string]float64
 	sample []float64
+	stat   map[string]float64
 
 	stop chan struct{}
 	wg   *sync.WaitGroup
@@ -70,8 +77,18 @@ func (flow *Flow) Start() {
 		logs.Error("%s", err)
 	}
 
-	wg := flow.wg
+	if err := flow.VerifyLogin(); err != nil {
+		logs.Error("%s", err)
 
+		subject = "notice login failed"
+		content := err.Error()
+		if err = flow.emailSender.SendMsgString(subject, content); err != nil {
+			logs.Error("error when send verify login result")
+		}
+		return
+	}
+
+	wg := flow.wg
 	wg.Add(1)
 	go func() {
 		flow.CollectingSamples()
@@ -104,6 +121,35 @@ func (flow *Flow) Stop() {
 	flow.wg.Wait()
 
 	logs.Info("flow stopped")
+}
+
+// todo: 实现
+func (flow *Flow) VerifyLogin() error {
+	resp, err := flow.client.Get(LoginPage)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	if err != nil {
+		return err
+	}
+	selection := doc.Find(".__cf_email__")
+
+	cipherAddr, exist := selection.Attr("data-cfemail")
+	if !exist {
+		return ErrLoginFailed
+	}
+	addr, err := decodeEmail(cipherAddr)
+	if err != nil {
+		return err
+	}
+	if flow.config.Email != addr {
+		return ErrLoginFailed
+	}
+
+	return nil
 }
 
 func (flow *Flow) NotifyAt11pm() {
@@ -378,4 +424,26 @@ func (flow *Flow) crawlNewsList() ([]string, error) {
 	})
 
 	return newsURLs, nil
+}
+
+func decodeEmail(cipher string) (string, error) {
+	if len(cipher) < 2 {
+		return "", fmt.Errorf("cipher len not enough")
+	}
+
+	var address string
+	key, err := strconv.ParseInt(cipher[:2], 16, 64)
+	if err != nil {
+		return "", err
+	}
+
+	for i := 2; i < len(cipher); i += 2 {
+		x, err := strconv.ParseInt(cipher[i:i+2], 16, 64)
+		if err != nil {
+			logs.Error(err)
+			return "", err
+		}
+		address += string(x ^ key)
+	}
+	return address, nil
 }
