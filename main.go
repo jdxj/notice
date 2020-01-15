@@ -23,7 +23,7 @@ func main() {
 	// 由于未知异常导致程序退出, 尝试捕获可能的错误
 	defer func() {
 		if err := recover(); err != nil {
-			logs.Error("catch exception: %s", err)
+			logs.Critical("catch exception: %s", err)
 		}
 	}()
 
