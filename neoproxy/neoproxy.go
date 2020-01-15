@@ -54,18 +54,17 @@ type Flow struct {
 	client      *http.Client
 	emailSender *module.EmailSender
 
-	lables       []string
-	stat         map[string]float64
-	sample       []float64
-	lastNewsDate time.Time
+	// mutex 保护以下字段
+	mutex  sync.Mutex
+	lables []string
+	stat   map[string]float64
+	sample []float64
 
 	stop chan struct{}
 	wg   *sync.WaitGroup
 }
 
 func (flow *Flow) Start() {
-	// 这里使用通知的目的是: 如果程序由 systemd 重启过,
-	// 说明发生了异常终止, 所以需要通知.
 	subject := "notice start"
 	if err := flow.emailSender.SendMsgString(subject, time.Now().Format(time.RFC1123)); err != nil {
 		logs.Error("%s", err)
@@ -232,24 +231,29 @@ func (flow *Flow) update() {
 		}
 		stat[k] = dosage
 	}
-	flow.lables = lables
-	flow.stat = stat
+	today := time.Now().Format("Jan 02")
+	dosage := stat[today]
 
 	// 保存采样
-	today := time.Now().Format("Jan 02")
-	dosage := flow.stat[today]
+	flow.mutex.Lock()
+	flow.lables = lables
+	flow.stat = stat
 	flow.sample = append(flow.sample, dosage)
 	if len(flow.sample) > SamplesLimit {
 		flow.sample = flow.sample[1:]
 	}
+	flow.mutex.Unlock()
 }
 
 func (flow *Flow) TotalUsed() string {
 	var used float64
 
+	flow.mutex.Lock()
 	for _, dosage := range flow.stat {
 		used += dosage
 	}
+	flow.mutex.Unlock()
+
 	return fmt.Sprintf("%.2fG", used/1024)
 }
 
@@ -258,13 +262,20 @@ func (flow *Flow) TodayUsed() string {
 }
 
 func (flow *Flow) todayUsed() float64 {
+	var todayUsed float64
+
+	flow.mutex.Lock()
 	today := time.Now().Format("Jan 02")
-	return flow.stat[today]
+	todayUsed = flow.stat[today]
+	flow.mutex.Unlock()
+
+	return todayUsed
 }
 
 func (flow *Flow) NotifyLastNews() {
 	subject := "新的消息"
 
+	var lastNewsDate time.Time
 	ticker := time.NewTicker(time.Hour)
 	defer ticker.Stop()
 
@@ -280,10 +291,10 @@ func (flow *Flow) NotifyLastNews() {
 				logs.Error("%s", err)
 				continue
 			}
-			if flow.lastNewsDate == news.UpdateTime {
+			if lastNewsDate == news.UpdateTime {
 				continue
 			}
-			flow.lastNewsDate = news.UpdateTime
+			lastNewsDate = news.UpdateTime
 
 			err = flow.emailSender.SendMsgString(subject, news.String())
 			if err != nil {

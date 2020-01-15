@@ -20,6 +20,13 @@ func main() {
 		return
 	}
 
+	// 由于未知异常导致程序退出, 尝试捕获可能的错误
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error("catch exception: %s", err)
+		}
+	}()
+
 	// 启动 flow
 	flow, err := neoproxy.NewFlow(config.NeoProxy, config.Email)
 	if err != nil {
