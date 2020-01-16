@@ -43,7 +43,7 @@ const (
 	CollectingFrequency  = time.Minute
 	SamplesLimit         = 1440 // 24 * 60m
 	NotificationInterval = 10 * time.Minute
-	DailyDosageLimit     = 600
+	DailyDosageLimit     = 600 // unit is M
 	LoginRetryLimit      = 3
 )
 

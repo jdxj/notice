@@ -1,6 +1,7 @@
 package module
 
 import (
+	"io"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -27,4 +28,14 @@ func NewHTTPClientWithCookie(rawURL, cookiesStr, domain string) (*http.Client, e
 	client := &http.Client{}
 	client.Jar = jar
 	return client, nil
+}
+
+func NewHTTPRequestWithUserAgent(method, url string, body io.Reader) (*http.Request, error) {
+	req, err := http.NewRequest(method, url, body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36")
+	return req, nil
 }
