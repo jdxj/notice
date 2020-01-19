@@ -1,6 +1,7 @@
 package main
 
 import (
+	"notice/medeming"
 	"notice/module"
 	"notice/neoproxy"
 	"os"
@@ -28,12 +29,19 @@ func main() {
 	}()
 
 	// 启动 flow
-	flow, err := neoproxy.NewFlow(config.NeoProxy, config.Email)
-	if err != nil {
-		logs.Error("%s", err)
-		return
+	flow, errFlow := neoproxy.NewFlow(config.NeoProxy, config.Email)
+	if errFlow != nil {
+		logs.Error("%s", errFlow)
+	} else {
+		flow.Start()
 	}
-	flow.Start()
+
+	jet, errJet := medeming.NewJetbrains(config.Email)
+	if errJet != nil {
+		logs.Error("%s", errJet)
+	} else {
+		jet.Start()
+	}
 
 	sigs := make(chan os.Signal, 2)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -43,7 +51,12 @@ func main() {
 		logs.Info("receive stop signal")
 	}
 
-	flow.Stop()
+	if errFlow == nil {
+		flow.Stop()
+	}
+	if errJet == nil {
+		jet.Stop()
+	}
 
 	if err := module.WriteConfig(config); err != nil {
 		logs.Error("%s", err)
