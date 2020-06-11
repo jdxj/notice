@@ -11,13 +11,6 @@ func init() {
 }
 
 func main() {
-	//sigs := make(chan os.Signal, 2)
-	//signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-	//
-	//select {
-	//case <-sigs:
-	//	logs.Info("receive stop signal")
-	//}
 	if err := cmd.Execute(); err != nil {
 		logs.Error("cmd execute failed: %s", err)
 	}

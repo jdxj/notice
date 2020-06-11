@@ -10,6 +10,7 @@ require (
 	github.com/jordan-wright/email v0.0.0-20200602115436-fd8a7622303e
 	github.com/robfig/cron/v3 v3.0.0
 	github.com/shiena/ansicolor v0.0.0-20151119151921-a422bbe96644 // indirect
+	github.com/spf13/cobra v0.0.5
 	golang.org/x/sys v0.0.0-20200610111108-226ff32320da // indirect
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 )

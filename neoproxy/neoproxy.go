@@ -1,7 +1,6 @@
 package neoproxy
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -17,19 +16,25 @@ import (
 	"github.com/astaxie/beego/logs"
 )
 
-func NewFlow() *Flow {
+func NewFlow() (*Flow, error) {
+	neoCfg, err := config.GetNeo()
+	if err != nil {
+		return nil, err
+	}
+
 	c := client.NewClientCookie(
-		neoProxyCfg.Host,
-		neoProxyCfg.Cookies,
-		neoProxyCfg.Domain,
+		neoCfg.Host,
+		neoCfg.Cookies,
+		neoCfg.Domain,
 	)
 
 	flow := &Flow{
 		client:      c,
+		neoCfg:      neoCfg,
 		dosageMutex: &sync.Mutex{},
 		newsMutex:   &sync.Mutex{},
 	}
-	return flow
+	return flow, nil
 }
 
 const (
@@ -39,28 +44,13 @@ const (
 	NewsPage   = "/news"
 )
 
-var (
-	ErrLoginFailed = errors.New("login failed")
-
-	neoProxyCfg *config.Neo
-)
-
-func init() {
-	cfg, err := config.GetNeo()
-	if err != nil {
-		// todo: 在 init 之前检查配置正确性
-		//panic(err)
-	}
-	neoProxyCfg = cfg
-}
-
 type Flow struct {
 	client *http.Client
+	neoCfg *config.Neo
 
 	// dosageMutex 保护以下字段
 	dosageMutex *sync.Mutex
 	lables      []string
-	sample      []float64
 	stat        map[string]float64
 
 	// newsMutex 保护以下字段
@@ -70,7 +60,8 @@ type Flow struct {
 }
 
 func (flow *Flow) VerifyLogin() error {
-	resp, err := flow.client.Get(neoProxyCfg.Host + LoginPage)
+	cfg := flow.neoCfg
+	resp, err := flow.client.Get(cfg.Host + LoginPage)
 	if err != nil {
 		return err
 	}
@@ -92,14 +83,15 @@ func (flow *Flow) VerifyLogin() error {
 		return err
 	}
 
-	if addr != neoProxyCfg.User {
+	if addr != cfg.User {
 		return fmt.Errorf("verify email failed")
 	}
 	return nil
 }
 
 func (flow *Flow) UpdateDosage() {
-	dosageURL := neoProxyCfg.Host + DosagePage + neoProxyCfg.Services
+	cfg := flow.neoCfg
+	dosageURL := cfg.Host + DosagePage + cfg.Services
 	resp, err := flow.client.Get(dosageURL)
 	if err != nil {
 		logs.Error("update dosage failed: %s", err)
@@ -267,7 +259,8 @@ func (flow *Flow) CrawlLastNews() {
 }
 
 func (flow *Flow) crawlNewsList() ([]string, error) {
-	resp, err := flow.client.Get(neoProxyCfg.Host + NewsPage)
+	cfg := flow.neoCfg
+	resp, err := flow.client.Get(cfg.Host + NewsPage)
 	if err != nil {
 		return nil, err
 	}
@@ -287,7 +280,7 @@ func (flow *Flow) crawlNewsList() ([]string, error) {
 			return
 		}
 
-		newsURL = neoProxyCfg.Host + newsURL
+		newsURL = cfg.Host + newsURL
 		newsURLs = append(newsURLs, newsURL)
 	})
 

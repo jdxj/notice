@@ -57,7 +57,10 @@ func TestNews_String(t *testing.T) {
 }
 
 func TestFlow_VerifyLogin(t *testing.T) {
-	flow := NewFlow()
+	flow, err := NewFlow()
+	if err != nil {
+		t.Fatalf("%s\n", err)
+	}
 	if err := flow.VerifyLogin(); err != nil {
 		t.Fatalf("%s\n", err)
 	}
@@ -67,7 +70,10 @@ func TestFlow_VerifyLogin(t *testing.T) {
 }
 
 func TestFlow_CrawlLastNews(t *testing.T) {
-	flow := NewFlow()
+	flow, err := NewFlow()
+	if err != nil {
+		t.Fatalf("%s\n", err)
+	}
 
 	if err := flow.VerifyLogin(); err != nil {
 		t.Fatalf("%s\n", err)
@@ -110,7 +116,11 @@ func TestDecodeEmail(t *testing.T) {
 }
 
 func TestFlow_SendLastNews(t *testing.T) {
-	flow := NewFlow()
+	flow, err := NewFlow()
+	if err != nil {
+		t.Fatalf("%s\n", err)
+	}
+
 	if err := flow.VerifyLogin(); err != nil {
 		t.Fatalf("%s\n", err)
 	}

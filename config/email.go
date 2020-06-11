@@ -1,9 +1,12 @@
 package config
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 var (
-	EmailKey = []byte("email")
+	emailKey = []byte("email")
 )
 
 type Email struct {
@@ -12,9 +15,10 @@ type Email struct {
 }
 
 func (c *Cache) GetEmail() (*Email, error) {
-	data, err := c.Get(EmailKey)
+	data, err := c.Get(emailKey)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("can not get data, key: %s, err: %s",
+			emailKey, err)
 	}
 
 	email := &Email{}
@@ -23,5 +27,5 @@ func (c *Cache) GetEmail() (*Email, error) {
 
 func (c *Cache) SetEmail(email *Email) error {
 	data, _ := json.Marshal(email)
-	return c.Set(EmailKey, data)
+	return c.Set(emailKey, data)
 }

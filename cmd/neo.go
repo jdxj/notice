@@ -16,7 +16,9 @@ limitations under the License.
 package cmd
 
 import (
-	"github.com/astaxie/beego/logs"
+	"fmt"
+	"os"
+
 	"github.com/jdxj/notice/config"
 
 	"github.com/spf13/cobra"
@@ -25,10 +27,12 @@ import (
 // neoCmd represents the neo command
 var neoCmd = &cobra.Command{
 	Use:   "neo",
-	Short: "neo config",
+	Short: "set neo config",
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := config.SetNeo(neoFlags); err != nil {
-			logs.Error("set neo config failed: %s", err)
+			fmt.Fprintf(os.Stderr, "set neo config failed: %s\n", err)
+		} else {
+			fmt.Printf("set neo config success\n")
 		}
 	},
 }
@@ -48,7 +52,7 @@ func init() {
 	// is called directly, e.g.:
 	// neoCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 
-	neoCmd.Flags().StringVarP(&neoFlags.Host, "host", "h", "", "neo site")
+	neoCmd.Flags().StringVar(&neoFlags.Host, "host", "", "neo site")
 	neoCmd.Flags().StringVarP(&neoFlags.Domain, "domain", "d", "", "neo domain")
 	neoCmd.Flags().StringVarP(&neoFlags.Cookies, "cookies", "c", "", "neo cookies")
 	neoCmd.Flags().StringVarP(&neoFlags.Services, "services", "s", "", "neo services")

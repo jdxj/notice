@@ -9,7 +9,10 @@ type Cache struct {
 }
 
 func NewCache(path string) *Cache {
-	db, err := badger.Open(badger.DefaultOptions(path))
+	opt := badger.DefaultOptions(path)
+	opt.Logger = nil
+
+	db, err := badger.Open(opt)
 	if err != nil {
 		panic(err)
 	}
@@ -47,8 +50,8 @@ func (c *Cache) Set(key, value []byte) error {
 }
 
 // todo: 实现, 检查所有配置是否已缓存
-func (c *Cache) Check() error {
-	return nil
+func (c *Cache) Check() {
+
 }
 
 func (c *Cache) Close() error {

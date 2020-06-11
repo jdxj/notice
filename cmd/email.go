@@ -16,53 +16,44 @@ limitations under the License.
 package cmd
 
 import (
+	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
 
-	"github.com/astaxie/beego/logs"
 	"github.com/jdxj/notice/config"
-	"github.com/jdxj/notice/scheduler"
+
 	"github.com/spf13/cobra"
 )
 
-// startCmd represents the start command
-var startCmd = &cobra.Command{
-	Use:   "start",
-	Short: "run task",
+// emailCmd represents the email command
+var emailCmd = &cobra.Command{
+	Use:   "email",
+	Short: "set email config",
 	Run: func(cmd *cobra.Command, args []string) {
-		scheduler.Start()
-		//scheduler.StartTest()
-
-		block()
+		if err := config.SetEmail(emailFlags); err != nil {
+			fmt.Fprintf(os.Stderr, "set email config failed: %s", err)
+		} else {
+			fmt.Printf("set email success")
+		}
 	},
 }
 
+var emailFlags = &config.Email{}
+
 func init() {
-	rootCmd.AddCommand(startCmd)
+	rootCmd.AddCommand(emailCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// startCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// emailCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// startCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-}
+	// emailCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 
-// cron 任务在其他 goroutine 中, 这里用于阻塞和接收停止信号
-func block() {
-	sigs := make(chan os.Signal, 2)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-
-	select {
-	case <-sigs:
-		logs.Info("receive stop signal")
-	}
-
-	scheduler.Stop()
-	config.Close()
-	logs.GetBeeLogger().Close()
+	emailCmd.Flags().StringVarP(&emailFlags.Addr, "addr", "a",
+		"985759262@qq.com", "set email service account")
+	emailCmd.Flags().StringVarP(&emailFlags.Token, "token", "t",
+		"", "set email service password")
 }

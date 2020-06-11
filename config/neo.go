@@ -1,6 +1,9 @@
 package config
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 var (
 	neoKey = []byte("neo")
@@ -17,7 +20,8 @@ type Neo struct {
 func (c *Cache) GetNeo() (*Neo, error) {
 	data, err := c.Get(neoKey)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("can not get data, key: %s, err: %s",
+			neoKey, err)
 	}
 
 	neo := &Neo{}

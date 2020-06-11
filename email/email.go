@@ -5,6 +5,8 @@ import (
 	"net/smtp"
 	"sync"
 
+	"github.com/astaxie/beego/logs"
+
 	"github.com/jdxj/notice/config"
 
 	"github.com/jordan-wright/email"
@@ -42,6 +44,8 @@ func getEmailCfg() (*config.Email, error) {
 func Send(subject string, data []byte, to ...string) error {
 	cfg, err := getEmailCfg()
 	if err != nil {
+		logs.Warn("send by email failed:\n\tsubject: %s\n\tdata: %s",
+			subject, data)
 		return err
 	}
 

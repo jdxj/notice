@@ -1,15 +1,11 @@
 package neoproxy
 
-var (
-	flow = NewFlow()
-)
-
-func NotifyDosage() {
+func NotifyDosage(flow *Flow) {
 	flow.UpdateDosage()
 	flow.SendDosage()
 }
 
-func NotifyNews() {
+func NotifyNews(flow *Flow) {
 	flow.CrawlLastNews()
 	flow.SendLastNews()
 }
