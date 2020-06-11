@@ -9,11 +9,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jdxj/notice/email"
-
-	"github.com/jdxj/notice/config"
-
 	"github.com/jdxj/notice/client"
+	"github.com/jdxj/notice/config"
+	"github.com/jdxj/notice/email"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/astaxie/beego/logs"

@@ -1,8 +1,7 @@
 package config
 
 const (
-	//CachePath = "cache.db"
-	CachePath = "/home/jdxj/workspace/notice/cache.db"
+	CachePath = "cache.db"
 )
 
 var (
