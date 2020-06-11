@@ -1,12 +1,12 @@
 package neoproxy
 
 import (
-	"encoding/json"
 	"fmt"
-	"notice/module"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/jdxj/notice/config"
 )
 
 func TestTimeFormat(t *testing.T) {
@@ -56,46 +56,39 @@ func TestNews_String(t *testing.T) {
 	fmt.Println(news)
 }
 
-func TestCrawlNews(t *testing.T) {
-	cfg, err := module.ReadConfig()
-	if err != nil {
-		t.Fatalf("%s\n", err)
-	}
-	flow, err := NewFlow(cfg.NeoProxy, cfg.Email)
-	if err != nil {
+func TestFlow_VerifyLogin(t *testing.T) {
+	flow := NewFlow()
+	if err := flow.VerifyLogin(); err != nil {
 		t.Fatalf("%s\n", err)
 	}
 
-	newsURLs, err := flow.crawlNewsList()
-	if err != nil {
-		t.Fatalf("%s\n", err)
-	}
-
-	fmt.Printf("len: %d\n", len(newsURLs))
-	for _, v := range newsURLs {
-		fmt.Println(v)
-	}
-
-	news, err := flow.crawlLastNews()
-	if err != nil {
-		t.Fatalf("%s\n", err)
-	}
-	fmt.Printf("%s\n", news)
+	flow.UpdateDosage()
+	flow.SendDosage()
 }
 
-func TestFlow_VerifyLogin(t *testing.T) {
-	cfg, err := module.ReadConfig()
-	if err != nil {
-		t.Fatalf("%s\n", err)
-	}
-	flow, err := NewFlow(cfg.NeoProxy, cfg.Email)
-	if err != nil {
+func TestFlow_CrawlLastNews(t *testing.T) {
+	flow := NewFlow()
+
+	if err := flow.VerifyLogin(); err != nil {
 		t.Fatalf("%s\n", err)
 	}
 
-	if err := flow.VerifyLogin(); err != nil {
-		t.Fatalf("%s", err)
+	flow.CrawlLastNews()
+}
+
+func TestNeoConfig(t *testing.T) {
+	neo := &config.Neo{
+		Host:     "https://neogate.co",
+		Domain:   ".neogate.co",
+		Cookies:  "",
+		Services: "",
+		User:     "985759262@qq.com",
 	}
+	if err := config.SetNeo(neo); err != nil {
+		t.Fatalf("%s\n", err)
+	}
+	config.Close()
+	//fmt.Printf("%v", *neoProxyCfg)
 }
 
 func TestTimeEqual(t *testing.T) {
@@ -106,7 +99,8 @@ func TestTimeEqual(t *testing.T) {
 }
 
 func TestDecodeEmail(t *testing.T) {
-	address, err := decodeEmail("a990919c9e9c909b9f9be9d8d887cac6c4")
+	//address, err := decodeEmail("a990919c9e9c909b9f9be9d8d887cac6c4")
+	address, err := decodeEmail("d1e8e9e4e6e4e8e3e7e391a0a0ffb2bebc")
 	if err != nil {
 		t.Fatalf("%s\n", err)
 	}
@@ -115,32 +109,12 @@ func TestDecodeEmail(t *testing.T) {
 	}
 }
 
-func TestFlow_SerializeCookie(t *testing.T) {
-	cfg, err := module.ReadConfig()
-	if err != nil {
-		t.Fatalf("%s\n", err)
-	}
-	flow, err := NewFlow(cfg.NeoProxy, cfg.Email)
-	if err != nil {
+func TestFlow_SendLastNews(t *testing.T) {
+	flow := NewFlow()
+	if err := flow.VerifyLogin(); err != nil {
 		t.Fatalf("%s\n", err)
 	}
 
-	cookieStr, err := flow.serializeCookie()
-	if err != nil {
-		t.Fatalf("%s", err)
-	}
-	fmt.Println(cookieStr)
-}
-
-func TestJsonMarshal(t *testing.T) {
-	cfg, err := module.ReadConfig()
-	if err != nil {
-		t.Fatalf("%s\n", err)
-	}
-
-	data, err := json.MarshalIndent(cfg, "", "  ")
-	if err != nil {
-		t.Fatalf("%s\n", err)
-	}
-	fmt.Printf("%s", data)
+	flow.CrawlLastNews()
+	flow.SendLastNews()
 }

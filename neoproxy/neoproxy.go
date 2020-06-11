@@ -4,134 +4,75 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
-	"notice/module"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/jdxj/notice/email"
+
+	"github.com/jdxj/notice/config"
+
+	"github.com/jdxj/notice/client"
+
 	"github.com/PuerkitoBio/goquery"
 	"github.com/astaxie/beego/logs"
 )
 
-func NewFlow(npc *module.NeoProxyConfig, ec *module.EmailConfig) (*Flow, error) {
-	if npc == nil {
-		return nil, fmt.Errorf("invalid NeoProxyConfig")
-	}
-
-	es, err := module.NewEmailSender(ec)
-	if err != nil {
-		return nil, err
-	}
+func NewFlow() *Flow {
+	c := client.NewClientCookie(
+		neoProxyCfg.Host,
+		neoProxyCfg.Cookies,
+		neoProxyCfg.Domain,
+	)
 
 	flow := &Flow{
-		config:      npc,
-		stop:        make(chan struct{}),
-		wg:          &sync.WaitGroup{},
-		emailSender: es,
+		client:      c,
+		dosageMutex: &sync.Mutex{},
+		newsMutex:   &sync.Mutex{},
 	}
-
-	flow.client, err = module.NewHTTPClientWithCookie(npc.URL, npc.Cookie, npc.Domain)
-	if err != nil {
-		return nil, err
-	}
-	return flow, nil
+	return flow
 }
 
 const (
-	CollectingFrequency  = time.Minute
-	SamplesLimit         = 1440 // 24 * 60m
-	NotificationInterval = 10 * time.Minute
-	DailyDosageLimit     = 600 // unit is M
-	LoginRetryLimit      = 3
-)
-
-const (
-	HomePage  = "https://neoproxy.org"
-	NewsPage  = "https://neoproxy.org/news"
-	LoginPage = "https://neoproxy.org/user"
+	// 需要配合 neoProxyCfg.Host 使用
+	LoginPage  = "/user"
+	DosagePage = "/services"
+	NewsPage   = "/news"
 )
 
 var (
 	ErrLoginFailed = errors.New("login failed")
+
+	neoProxyCfg *config.Neo
 )
 
+func init() {
+	cfg, err := config.GetNeo()
+	if err != nil {
+		// todo: 在 init 之前检查配置正确性
+		//panic(err)
+	}
+	neoProxyCfg = cfg
+}
+
 type Flow struct {
-	client      *http.Client
-	emailSender *module.EmailSender
-	config      *module.NeoProxyConfig
+	client *http.Client
 
-	// mutex 保护以下字段
-	mutex  sync.Mutex
-	lables []string
-	sample []float64
-	stat   map[string]float64
+	// dosageMutex 保护以下字段
+	dosageMutex *sync.Mutex
+	lables      []string
+	sample      []float64
+	stat        map[string]float64
 
-	stop chan struct{}
-	wg   *sync.WaitGroup
-}
-
-func (flow *Flow) Start() {
-	subject := "notice start"
-	if err := flow.emailSender.SendMsgString(subject, time.Now().Format(time.RFC1123)); err != nil {
-		logs.Error("%s", err)
-	}
-
-	if err := flow.VerifyLogin(); err != nil {
-		logs.Error("%s", err)
-
-		subject = "notice login failed"
-		content := err.Error()
-		if err = flow.emailSender.SendMsgString(subject, content); err != nil {
-			logs.Error("error when send verify login result")
-		}
-		return
-	}
-
-	wg := flow.wg
-	wg.Add(1)
-	go func() {
-		flow.CollectingSamples()
-		wg.Done()
-	}()
-
-	wg.Add(1)
-	go func() {
-		flow.NotifyAt11pm()
-		wg.Done()
-	}()
-
-	wg.Add(1)
-	go func() {
-		flow.NotifyExceedDailyDosageLimit()
-		wg.Done()
-	}()
-
-	wg.Add(1)
-	go func() {
-		flow.NotifyLastNews()
-		wg.Done()
-	}()
-
-	logs.Info("flow started")
-}
-
-func (flow *Flow) Stop() {
-	close(flow.stop)
-	flow.wg.Wait()
-
-	if err := flow.serializeCookie(); err != nil {
-		logs.Error("%s", err)
-	} else {
-		logs.Info("serialize cookies success")
-	}
-
-	logs.Info("flow stopped")
+	// newsMutex 保护以下字段
+	newsMutex *sync.Mutex
+	news      *News
+	newsTitle string
 }
 
 func (flow *Flow) VerifyLogin() error {
-	resp, err := flow.client.Get(LoginPage)
+	resp, err := flow.client.Get(neoProxyCfg.Host + LoginPage)
 	if err != nil {
 		return err
 	}
@@ -145,133 +86,38 @@ func (flow *Flow) VerifyLogin() error {
 
 	cipherAddr, exist := selection.Attr("data-cfemail")
 	if !exist {
-		return ErrLoginFailed
+		return fmt.Errorf("not found data-cfemail attr")
 	}
+
 	addr, err := decodeEmail(cipherAddr)
 	if err != nil {
 		return err
 	}
-	if flow.config.Email != addr {
-		return ErrLoginFailed
-	}
 
+	if addr != neoProxyCfg.User {
+		return fmt.Errorf("verify email failed")
+	}
 	return nil
 }
 
-func (flow *Flow) NotifyAt11pm() {
-	subject := "用量统计"
-	timer := time.NewTimer(5 * time.Second)
-	defer timer.Stop()
-
-	// 当天通知一次
-	now := time.Now()
-	today11pm := time.Unix(now.Unix()/86400*86400, 0).Add(15 * time.Hour)
-	dur := today11pm.Sub(now)
-	if dur <= 0 {
-		flow.sendDosage(subject)
-	} else {
-		timer.Reset(dur)
-		select {
-		case <-flow.stop:
-			logs.Info("stop notify at 11pm")
-			return
-
-		case <-timer.C:
-			flow.sendDosage(subject)
-		}
-	}
-
-	for {
-		now = time.Now()
-		tomorrow11pm := time.Unix((now.Unix()/86400+1)*86400, 0).Add(15 * time.Hour)
-		dur = tomorrow11pm.Sub(now)
-		timer.Reset(dur)
-
-		select {
-		case <-flow.stop:
-			logs.Info("stop notify at 11pm")
-			return
-
-		case <-timer.C:
-			flow.sendDosage(subject)
-		}
-	}
-}
-
-func (flow *Flow) sendDosage(subject string) {
-	content := fmt.Sprintf("当日用量: %s, 总用量: %s", flow.TodayUsed(), flow.TotalUsed())
-	err := flow.emailSender.SendMsgString(subject, content)
+func (flow *Flow) UpdateDosage() {
+	dosageURL := neoProxyCfg.Host + DosagePage + neoProxyCfg.Services
+	resp, err := flow.client.Get(dosageURL)
 	if err != nil {
-		logs.Error("%s", err)
-	}
-}
-
-// NotifyExceedDailyDosageLimit 用于当超过每日平均用量时发出通知.
-// 如果当天超过用量限制, 那么只通知一次.
-func (flow *Flow) NotifyExceedDailyDosageLimit() {
-	var alreadyNotified bool
-	var notificationTime time.Time
-	subject := fmt.Sprintf("超过每日用量限制!")
-
-	ticker := time.NewTicker(10 * time.Minute)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-flow.stop:
-			logs.Info("stop notify daily dosage limit")
-			return
-
-		case <-ticker.C:
-			// 新的一天到了
-			if time.Now().Unix()/86400 != notificationTime.Unix()/86400 {
-				alreadyNotified = false
-			}
-
-			if flow.todayUsed() > DailyDosageLimit && !alreadyNotified {
-				flow.sendDosage(subject)
-				alreadyNotified = true
-				notificationTime = time.Now()
-			}
-		}
-	}
-}
-
-// CollectingSamples 用于收集用量数据.
-// 所有的通知方法不主动请求用量数据, 它们统计的数据都由 CollectingSamples
-// 同一收集. 应该保证 CollectingSamples 采集的频率有一个合适的值.
-func (flow *Flow) CollectingSamples() {
-	ticker := time.NewTicker(CollectingFrequency)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-flow.stop:
-			logs.Info("stop collecting samples")
-			return
-
-		case <-ticker.C:
-			flow.update()
-		}
-	}
-}
-
-func (flow *Flow) update() {
-	resp, err := flow.client.Get(flow.config.Service)
-	if err != nil {
-		logs.Error("error when update flow: %s", err)
+		logs.Error("update dosage failed: %s", err)
 		return
 	}
 	defer resp.Body.Close()
 
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
-		logs.Error("error when new doc")
+		logs.Error("new doc failed: %s", err)
 		return
 	}
 
 	selection := doc.Find("script").Last()
 	script := selection.Text()
+	//fmt.Printf("script: %s\n", script)
 
 	// 解析 lables
 	lablesStart := strings.Index(script, `[`)
@@ -296,152 +142,134 @@ func (flow *Flow) update() {
 	for i, k := range lables {
 		dosage, err := strconv.ParseFloat(transfers[i], 64)
 		if err != nil {
-			logs.Error("error when parse dosage: %s", transfers[i])
+			logs.Error("parse dosage failed: %s", transfers[i])
 		}
 		stat[k] = dosage
 	}
-	today := time.Now().Format("Jan 02")
-	dosage := stat[today]
 
 	// 保存采样
-	flow.mutex.Lock()
+	flow.dosageMutex.Lock()
 	flow.lables = lables
 	flow.stat = stat
-	flow.sample = append(flow.sample, dosage)
-	if len(flow.sample) > SamplesLimit {
-		flow.sample = flow.sample[1:]
+	flow.dosageMutex.Unlock()
+
+}
+
+func (flow *Flow) SendDosage() {
+	subject := "Neo Proxy 用量统计"
+	content := fmt.Sprintf("%s\n%s\n",
+		flow.TodayUsed(),
+		flow.TotalUsed())
+
+	if err := email.SendSelf(subject, content); err != nil {
+		logs.Error("send dosage failed: %s", err)
 	}
-	flow.mutex.Unlock()
 }
 
 func (flow *Flow) TotalUsed() string {
 	var used float64
 
-	flow.mutex.Lock()
+	flow.dosageMutex.Lock()
 	for _, dosage := range flow.stat {
 		used += dosage
 	}
-	flow.mutex.Unlock()
+	flow.dosageMutex.Unlock()
 
-	return fmt.Sprintf("%.2fG", used/1024)
+	return fmt.Sprintf("总共用量: %.2fG", used/1024)
 }
 
 func (flow *Flow) TodayUsed() string {
-	return fmt.Sprintf("%.2fM", flow.todayUsed())
-}
-
-func (flow *Flow) todayUsed() float64 {
-	var todayUsed float64
-
-	flow.mutex.Lock()
 	today := time.Now().Format("Jan 02")
-	todayUsed = flow.stat[today]
-	flow.mutex.Unlock()
+	var dosage float64
 
-	return todayUsed
+	flow.dosageMutex.Lock()
+	dosage = flow.stat[today]
+	flow.dosageMutex.Unlock()
+
+	return fmt.Sprintf("今日用量: %.2fM", dosage)
 }
 
-func (flow *Flow) serializeCookie() error {
-	URL, err := url.Parse(flow.config.URL)
-	if err != nil {
-		return err
-	}
-	cookies := flow.client.Jar.Cookies(URL)
+func (flow *Flow) SendLastNews() {
+	var news *News
+	flow.newsMutex.Lock()
+	news = flow.news
+	flow.newsMutex.Unlock()
 
-	var cookieStr string
-	for i, cookie := range cookies {
-		part := fmt.Sprintf("%s=%s", cookie.Name, cookie.Value)
-		cookieStr += part
-		if i != len(cookies)-1 {
-			cookieStr += "; "
-		}
+	if news == nil {
+		return
 	}
-	flow.config.Cookie = cookieStr
-	return nil
+	// 仍是之前的消息
+	if news.Title == flow.newsTitle {
+		return
+	}
+
+	subject := "新消息"
+	content := news.String()
+	if err := email.SendSelf(subject, content); err != nil {
+		logs.Error("send last news failed: %s", err)
+		return
+	}
+
+	flow.newsTitle = news.Title
 }
 
-func (flow *Flow) NotifyLastNews() {
-	subject := "新的消息"
-
-	var lastNewsDate time.Time
-	ticker := time.NewTicker(time.Hour)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-flow.stop:
-			logs.Info("stop notify last news")
-			return
-
-		case <-ticker.C:
-			news, err := flow.crawlLastNews()
-			if err != nil {
-				logs.Error("%s", err)
-				continue
-			}
-			if lastNewsDate == news.UpdateTime {
-				continue
-			}
-			lastNewsDate = news.UpdateTime
-
-			err = flow.emailSender.SendMsgString(subject, news.String())
-			if err != nil {
-				logs.Error("%s", err)
-			}
-		}
-	}
-}
-
-func (flow *Flow) crawlLastNews() (*News, error) {
+func (flow *Flow) CrawlLastNews() {
 	newsURLs, err := flow.crawlNewsList()
 	if err != nil {
-		return nil, err
-	}
-	if len(newsURLs) <= 0 {
-		return nil, fmt.Errorf("no news")
+		logs.Error("crawl last news failed: %s", err)
+		return
 	}
 
+	if len(newsURLs) <= 0 {
+		logs.Warn("no news")
+		return
+	}
 	lastNewsURL := newsURLs[0]
 	resp, err := flow.client.Get(lastNewsURL)
 	if err != nil {
-		return nil, err
+		logs.Error("get failed: %s", err)
+		return
 	}
 	defer resp.Body.Close()
 
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
-		return nil, err
+		logs.Error("new doc failed: %s", err)
+		return
 	}
-	selection := doc.Find(".card-body")
 
+	selection := doc.Find(".card-body")
 	// 解析 title
 	title := selection.Find("h3").Text()
-
 	// 解析 update time
 	dateStr := selection.Find("small").Text()
 	dateStrIdx := strings.Index(dateStr, "20")
 	if dateStrIdx < 0 {
-		return nil, fmt.Errorf("not found news's date: %s", lastNewsURL)
+		logs.Error("not found news's date: %s", lastNewsURL)
+		return
 	}
+
 	dateStr = dateStr[dateStrIdx:]
 	date, err := time.Parse("2006-01-02", dateStr)
 	if err != nil {
-		return nil, err
+		logs.Error("parse time failed: %s", err)
+		return
 	}
-
 	// 解析 content
 	content := selection.Find("p").Text()
-
 	news := &News{
 		Title:      title,
 		UpdateTime: date,
 		Content:    content,
 	}
-	return news, nil
+
+	flow.newsMutex.Lock()
+	flow.news = news
+	flow.newsMutex.Unlock()
 }
 
 func (flow *Flow) crawlNewsList() ([]string, error) {
-	resp, err := flow.client.Get(NewsPage)
+	resp, err := flow.client.Get(neoProxyCfg.Host + NewsPage)
 	if err != nil {
 		return nil, err
 	}
@@ -461,7 +289,7 @@ func (flow *Flow) crawlNewsList() ([]string, error) {
 			return
 		}
 
-		newsURL = HomePage + newsURL
+		newsURL = neoProxyCfg.Host + newsURL
 		newsURLs = append(newsURLs, newsURL)
 	})
 
