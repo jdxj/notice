@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/astaxie/beego/logs"
-	"github.com/jdxj/notice/neoproxy"
+	"github.com/jdxj/notice/app/neoproxy"
 	"github.com/robfig/cron/v3"
 )
 
