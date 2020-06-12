@@ -1,6 +1,9 @@
 package raphael
 
-import "encoding/xml"
+import (
+	"encoding/xml"
+	"fmt"
+)
 
 type RSS struct {
 	XMLName xml.Name `xml:"rss"`
@@ -76,4 +79,15 @@ type Hash struct {
 	XMLName xml.Name `xml:"hash"`
 	Algo    string   `xml:"algo,attr"`
 	Data    string   `xml:",innerxml"`
+}
+
+func unmarshalRSS(data []byte) (*Item, error) {
+	rss := &RSS{}
+	if err := xml.Unmarshal(data, rss); err != nil {
+		return nil, err
+	}
+	if rss.Channel == nil || len(rss.Channel.Items) <= 0 {
+		return nil, fmt.Errorf("not found item update")
+	}
+	return rss.Channel.Items[0], nil
 }

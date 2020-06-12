@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	RSSURL = "https://sourceforge.net/projects/evolution-x/rss?path=/raphael"
+	RSSExRomURL = "https://sourceforge.net/projects/evolution-x/rss?path=/raphael"
+	RSSImURL    = "https://sourceforge.net/projects/unofficialbuilds/rss?path=/raphael/kernel"
 )
 
 func NewRaphael() *Raphael {
@@ -24,8 +25,9 @@ func NewRaphael() *Raphael {
 	}
 
 	r := &Raphael{
-		client: c,
-		mutex:  &sync.Mutex{},
+		client:  c,
+		mutex:   &sync.Mutex{},
+		mutexIm: &sync.Mutex{},
 	}
 	return r
 }
@@ -37,39 +39,28 @@ type Raphael struct {
 	mutex *sync.Mutex
 	item  *Item
 	title string
+
+	// mutexIm 保护以下字段
+	mutexIm *sync.Mutex
+	itemIm  *Item
+	titleIm string
 }
 
 func (r *Raphael) UpdateItem() {
-	req, err := client.NewRequestUserAgent(http.MethodGet, RSSURL, nil)
+	data, err := r.readRespBody(RSSExRomURL)
 	if err != nil {
-		logs.Error("new req user agent failed: %s", err)
-		return
-	}
-	resp, err := r.client.Do(req)
-	if err != nil {
-		logs.Error("do req failed: %s", err)
-		return
-	}
-	defer resp.Body.Close()
-
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		logs.Error("read all failed: %s", err)
+		logs.Error("read all failed, err: %s, url: %s", err, RSSExRomURL)
 		return
 	}
 
-	rss := &RSS{}
-	if err := xml.Unmarshal(data, rss); err != nil {
-		logs.Error("unmarshal xml failed: %s", err)
-		return
-	}
-	if rss.Channel == nil || len(rss.Channel.Items) <= 0 {
-		logs.Warn("not found raphael update")
+	item, err := unmarshalRSS(data)
+	if err != nil {
+		logs.Error("unmarshal item failed, err: %s, url: %s", err, RSSExRomURL)
 		return
 	}
 
 	r.mutex.Lock()
-	r.item = rss.Channel.Items[0]
+	r.item = item
 	r.mutex.Unlock()
 }
 
@@ -92,5 +83,59 @@ func (r *Raphael) SendUpdate() {
 	content, _ := xml.MarshalIndent(item, "", "    ")
 	if err := email.SendSelfBytes(subject, content); err != nil {
 		logs.Error("send update failed: %s", err)
+	}
+}
+
+func (r *Raphael) UpdateItemIm() {
+	data, err := r.readRespBody(RSSImURL)
+	if err != nil {
+		logs.Error("read all failed, err: %s, url: %s", err, RSSImURL)
+		return
+	}
+
+	item, err := unmarshalRSS(data)
+	if err != nil {
+		logs.Error("unmarshal item failed, err: %s, url: %s", err, RSSImURL)
+		return
+	}
+
+	r.mutexIm.Lock()
+	r.itemIm = item
+	r.mutexIm.Unlock()
+}
+
+func (r *Raphael) readRespBody(url string) ([]byte, error) {
+	req, err := client.NewRequestUserAgent(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := r.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	return ioutil.ReadAll(resp.Body)
+}
+
+func (r *Raphael) SendUpdateIm() {
+	var item *Item
+	r.mutexIm.Lock()
+	item = r.itemIm
+	r.mutexIm.Unlock()
+	// 没初始化
+	if item == nil {
+		return
+	}
+	// 没有更新
+	if item.Title.Data == r.titleIm {
+		return
+	}
+	r.titleIm = item.Title.Data
+
+	subject := "iMMENSITY 已更新"
+	content, _ := xml.MarshalIndent(item, "", "    ")
+	if err := email.SendSelfBytes(subject, content); err != nil {
+		logs.Error("send updateIm failed: %s", err)
 	}
 }

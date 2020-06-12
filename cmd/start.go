@@ -32,7 +32,6 @@ var startCmd = &cobra.Command{
 	Short: "run task",
 	Run: func(cmd *cobra.Command, args []string) {
 		scheduler.Start()
-		//scheduler.StartTest()
 
 		block()
 	},

@@ -57,7 +57,7 @@ func TestXML(t *testing.T) {
 func TestRSSURL(t *testing.T) {
 	c := http.Client{}
 
-	req, err := client.NewRequestUserAgent(http.MethodGet, RSSURL, nil)
+	req, err := client.NewRequestUserAgent(http.MethodGet, RSSExRomURL, nil)
 	if err != nil {
 		t.Fatalf("%s\n", err)
 	}
