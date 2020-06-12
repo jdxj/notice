@@ -21,12 +21,17 @@ type Hello struct {
 
 	Num   int    `xml:"num,attr"`
 	World *World `xml:"world"`
+	Pen   *Pen   `xml:"pen"`
 }
 
 type World struct {
 	XMLName xml.Name `xml:"world"`
 	Apple   string   `xml:"apple,attr"`
 	Pen     string   `xml:",innerxml"`
+}
+
+type Pen struct {
+	Data string `xml:",cdata"`
 }
 
 func TestXML(t *testing.T) {
@@ -87,4 +92,26 @@ func TestRSSURL(t *testing.T) {
 	}
 
 	fmt.Printf("marshal result:\n%s", data)
+}
+
+func TestReadCDATA(t *testing.T) {
+	p := &Pen{Data: "fadfi"}
+
+	h := &Hello{
+		Num: 0,
+		Pen: p,
+	}
+	data, _ := xml.MarshalIndent(h, "", "  ")
+	fmt.Printf("%s\n", data)
+
+	h2 := &Hello{}
+	xml.Unmarshal(data, h2)
+	fmt.Printf("pen: %s\n", h2.Pen.Data)
+}
+
+func TestRaphael_SendUpdate(t *testing.T) {
+	r := NewRaphael()
+
+	r.UpdateItem()
+	r.SendUpdate()
 }

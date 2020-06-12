@@ -59,7 +59,11 @@ func Send(subject string, data []byte, to ...string) error {
 }
 
 func SendSelf(subject, content string) error {
+	return SendSelfBytes(subject, []byte(content))
+}
+
+func SendSelfBytes(subject string, content []byte) error {
 	self := "985759262@qq.com"
 
-	return Send(subject, []byte(content), self)
+	return Send(subject, content, self)
 }

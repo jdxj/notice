@@ -192,6 +192,7 @@ func (flow *Flow) SendLastNews() {
 	if news.Title == flow.newsTitle {
 		return
 	}
+	flow.newsTitle = news.Title
 
 	subject := "新消息"
 	content := news.String()
@@ -199,8 +200,6 @@ func (flow *Flow) SendLastNews() {
 		logs.Error("send last news failed: %s", err)
 		return
 	}
-
-	flow.newsTitle = news.Title
 }
 
 func (flow *Flow) CrawlLastNews() {
