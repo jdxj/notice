@@ -4,7 +4,7 @@ import (
 	"github.com/astaxie/beego/logs"
 	"github.com/jdxj/notice/config"
 
-	"github.com/jdxj/notice/app/raphael"
+	"github.com/jdxj/notice/app/sourceforge"
 )
 
 func addMultiSourceforgeTask(sfCfg *config.Sourceforge, emailCfg *config.Email) error {
@@ -21,14 +21,14 @@ func addMultiSourceforgeTask(sfCfg *config.Sourceforge, emailCfg *config.Email) 
 }
 
 func addSourceforgeTask(url string, emailCfg *config.Email) error {
-	rap := raphael.NewRaphael(url, emailCfg)
+	rap := sourceforge.NewSourceforge(url, emailCfg)
 
 	// ------------------------------------------------------------------------------
 	// 每6个小时更新一次
 	//   - ex rom
 	//   - im kernel
 	_, err := scheduler.AddFunc("0 */6 * * *", func() {
-		logs.Info("execute raphael 'update item' task")
+		logs.Info("execute sourceforge 'update item' task")
 
 		rap.UpdateItem()
 	})
@@ -41,7 +41,7 @@ func addSourceforgeTask(url string, emailCfg *config.Email) error {
 	//   - ex rom
 	//   - im kernel
 	_, err = scheduler.AddFunc("*/5 * * * *", func() {
-		logs.Info("execute raphael 'send update' task")
+		logs.Info("execute sourceforge 'send update' task")
 
 		rap.SendUpdate()
 	})

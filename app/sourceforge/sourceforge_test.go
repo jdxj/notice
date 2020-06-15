@@ -1,4 +1,4 @@
-package raphael
+package sourceforge
 
 import (
 	"encoding/xml"
@@ -91,7 +91,7 @@ func TestXML(t *testing.T) {
 func TestRSSURL(t *testing.T) {
 	c := http.Client{}
 
-	req, err := client.NewRequestUserAgent(http.MethodGet, RSSExRomURL, nil)
+	req, err := client.NewRequestUserAgent(http.MethodGet, "", nil)
 	if err != nil {
 		t.Fatalf("%s\n", err)
 	}
@@ -144,7 +144,7 @@ func TestReadCDATA(t *testing.T) {
 }
 
 func TestRaphael_SendUpdate(t *testing.T) {
-	r := NewRaphael()
+	r := NewSourceforge("", nil)
 
 	r.UpdateItem()
 	r.SendUpdate()

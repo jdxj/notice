@@ -1,4 +1,4 @@
-package raphael
+package sourceforge
 
 import (
 	"encoding/xml"

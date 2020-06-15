@@ -1,4 +1,4 @@
-package raphael
+package sourceforge
 
 import (
 	"encoding/xml"
@@ -16,18 +16,13 @@ import (
 	"github.com/jdxj/notice/client"
 )
 
-const (
-//RSSExRomURL = "https://sourceforge.net/projects/evolution-x/rss?path=/raphael"
-//RSSImURL    = "https://sourceforge.net/projects/unofficialbuilds/rss?path=/raphael/kernel"
-)
-
-func NewRaphael(rssURL string, emailCfg *config.Email) *Raphael {
+func NewSourceforge(rssURL string, emailCfg *config.Email) *Sourceforge {
 	jar, _ := cookiejar.New(nil)
 	c := &http.Client{
 		Jar: jar,
 	}
 
-	r := &Raphael{
+	r := &Sourceforge{
 		url:    rssURL,
 		client: c,
 		sender: email.NewSender(emailCfg),
@@ -36,7 +31,7 @@ func NewRaphael(rssURL string, emailCfg *config.Email) *Raphael {
 	return r
 }
 
-type Raphael struct {
+type Sourceforge struct {
 	url string
 
 	client *http.Client
@@ -48,7 +43,7 @@ type Raphael struct {
 	title string
 }
 
-func (r *Raphael) UpdateItem() {
+func (r *Sourceforge) UpdateItem() {
 	data, err := r.readRespBody(r.url)
 	if err != nil {
 		logs.Error("read all failed, err: %s, url: %s", err, r.url)
@@ -66,7 +61,7 @@ func (r *Raphael) UpdateItem() {
 	r.mutex.Unlock()
 }
 
-func (r *Raphael) SendUpdate() {
+func (r *Sourceforge) SendUpdate() {
 	var item *Item
 	r.mutex.Lock()
 	item = r.item
@@ -90,7 +85,7 @@ func (r *Raphael) SendUpdate() {
 	}
 }
 
-func (r *Raphael) readRespBody(url string) ([]byte, error) {
+func (r *Sourceforge) readRespBody(url string) ([]byte, error) {
 	req, err := client.NewRequestUserAgent(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
