@@ -81,7 +81,7 @@ func (r *Raphael) SendUpdate() {
 
 	subject := "Evolution-x Raphael 已更新"
 	content, _ := xml.MarshalIndent(item, "", "    ")
-	if err := email.SendSelfBytes(subject, content); err != nil {
+	if err := email.SendTextSelfBytes(subject, content); err != nil {
 		logs.Error("send update failed: %s", err)
 	}
 }
@@ -135,7 +135,7 @@ func (r *Raphael) SendUpdateIm() {
 
 	subject := "iMMENSITY 已更新"
 	content, _ := xml.MarshalIndent(item, "", "    ")
-	if err := email.SendSelfBytes(subject, content); err != nil {
+	if err := email.SendTextSelfBytes(subject, content); err != nil {
 		logs.Error("send updateIm failed: %s", err)
 	}
 }

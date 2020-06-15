@@ -3,7 +3,6 @@ package email
 import (
 	"fmt"
 	"net/smtp"
-	"sync"
 
 	"github.com/astaxie/beego/logs"
 
@@ -17,53 +16,58 @@ const (
 	addr = host + ":587"
 )
 
+type ContentFormat int
+
+const (
+	Text ContentFormat = iota
+	Html
+)
+
 var (
-	// mutex 保护 emailCfg 的初始化
-	mutex    = sync.Mutex{}
 	emailCfg *config.Email
 )
 
-// 应用单例模式
-func getEmailCfg() (*config.Email, error) {
-	if emailCfg != nil {
-		return emailCfg, nil
+func init() {
+	logs.Info("check email cfg")
+
+	cfg, err := config.GetEmail()
+	if err != nil {
+		logs.Error("get email cfg failed: %s", err)
+		return
 	}
 
-	var err error
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	if emailCfg != nil {
-		return emailCfg, nil
-	}
-
-	emailCfg, err = config.GetEmail()
-	return emailCfg, err
+	emailCfg = cfg
+	logs.Info("check email cfg success")
 }
 
-func Send(subject string, data []byte, to ...string) error {
-	cfg, err := getEmailCfg()
-	if err != nil {
-		logs.Warn("send by email failed:\n\tsubject: %s\n\tdata: %s",
+func Send(format ContentFormat, subject string, data []byte, to ...string) error {
+	if emailCfg == nil {
+		return fmt.Errorf("email cfg not found:\n\tsubject: %s\n\tdata: %s",
 			subject, data)
-		return err
 	}
 
 	e := email.NewEmail()
 	e.Subject = subject
-	e.Text = data
-	e.From = fmt.Sprintf("notice <%s>", cfg.Addr)
+	e.From = fmt.Sprintf("notice <%s>", emailCfg.Addr)
 	e.To = to
 
-	return e.Send(addr, smtp.PlainAuth("", cfg.Addr, cfg.Token, host))
+	switch format {
+	case Text:
+		e.Text = data
+	case Html:
+		e.HTML = data
+	}
+
+	return e.Send(addr, smtp.PlainAuth("", emailCfg.Addr, emailCfg.Token, host))
 }
 
-func SendSelf(subject, content string) error {
-	return SendSelfBytes(subject, []byte(content))
+func SendTextSelf(subject, content string) error {
+	return Send(Text, subject, []byte(content), emailCfg.Addr)
+}
+func SendTextSelfBytes(subject string, content []byte) error {
+	return Send(Text, subject, content, emailCfg.Addr)
 }
 
-func SendSelfBytes(subject string, content []byte) error {
-	self := "985759262@qq.com"
-
-	return Send(subject, content, self)
+func SendHTMLSelf(subject, content string) error {
+	return Send(Html, subject, []byte(content), emailCfg.Addr)
 }

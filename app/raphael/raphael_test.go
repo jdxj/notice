@@ -24,6 +24,12 @@ type Hello struct {
 	Pen   *Pen   `xml:"pen"`
 }
 
+type Hello2 struct {
+	XMLName xml.Name `xml:"hello2"`
+	Pen1    string   `xml:",cdata"`
+	Pen2    string   `xml:",cdata"`
+}
+
 type World struct {
 	XMLName xml.Name `xml:"world"`
 	Apple   string   `xml:"apple,attr"`
@@ -32,6 +38,34 @@ type World struct {
 
 type Pen struct {
 	Data string `xml:",cdata"`
+}
+
+func TestMultiCDATA(t *testing.T) {
+
+	h := &Hello2{}
+
+	data, err := xml.MarshalIndent(h, "", "  ")
+	if err != nil {
+		t.Fatalf("%s\n", err)
+	}
+	fmt.Printf("%s\n", data)
+}
+
+func TestParseMultiCATA(t *testing.T) {
+	data := []byte(`<hello2>
+    <![CDATA[apple]]>
+    <![CDATA[pen]]>
+</hello2>`)
+
+	h2 := &Hello2{}
+	if err := xml.Unmarshal(data, h2); err != nil {
+		t.Fatalf("%s\n", err)
+	}
+
+	fmt.Printf("h2: %#v\n", *h2)
+
+	fmt.Printf("pen1: %#v\n", h2.Pen1)
+	fmt.Printf("pen2: %#v\n", h2.Pen2)
 }
 
 func TestXML(t *testing.T) {

@@ -151,7 +151,7 @@ func (flow *Flow) SendDosage() {
 		flow.TodayUsed(),
 		flow.TotalUsed())
 
-	if err := email.SendSelf(subject, content); err != nil {
+	if err := email.SendTextSelf(subject, content); err != nil {
 		logs.Error("send dosage failed: %s", err)
 	}
 }
@@ -196,7 +196,7 @@ func (flow *Flow) SendLastNews() {
 
 	subject := "新消息"
 	content := news.String()
-	if err := email.SendSelf(subject, content); err != nil {
+	if err := email.SendTextSelf(subject, content); err != nil {
 		logs.Error("send last news failed: %s", err)
 		return
 	}
