@@ -32,7 +32,7 @@ var startCmd = &cobra.Command{
 	Short: "run task",
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := scheduler.Start(); err != nil {
-			fmt.Fprintf(os.Stderr, "start tasks failed: %s", err)
+			fmt.Fprintf(os.Stderr, "start tasks failed: %s\n", err)
 			return
 		}
 		block()

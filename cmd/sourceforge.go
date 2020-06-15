@@ -29,9 +29,9 @@ var sourceforgeCmd = &cobra.Command{
 	Short: "add sourceforge subscription address",
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := config.AddSubAddr(addFlag); err != nil {
-			fmt.Fprintf(os.Stderr, "add subscription address failed: %s", err)
+			fmt.Fprintf(os.Stderr, "add subscription address failed: %s\n", err)
 		} else {
-			fmt.Printf("add subscription address success")
+			fmt.Printf("add subscription address success\n")
 		}
 	},
 }
