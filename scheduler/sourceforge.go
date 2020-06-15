@@ -24,8 +24,7 @@ func addSourceforgeTask(url string, emailCfg *config.Email) error {
 	rap := sourceforge.NewSourceforge(url, emailCfg)
 
 	// ------------------------------------------------------------------------------
-	// 每6个小时更新一次
-	_, err := scheduler.AddFunc("0 */6 * * *", func() {
+	_, err := scheduler.AddFunc("0 */2 * * *", func() {
 		logs.Info("execute sourceforge 'update item' task")
 
 		rap.UpdateItem()
@@ -35,7 +34,6 @@ func addSourceforgeTask(url string, emailCfg *config.Email) error {
 	}
 
 	// ------------------------------------------------------------------------------
-	// 如果发现 item 更新, 5分钟内发送
 	_, err = scheduler.AddFunc("*/5 * * * *", func() {
 		logs.Info("execute sourceforge 'send update' task")
 

@@ -14,9 +14,6 @@ func addNeoTask(neoCfg *config.Neo, emailCfg *config.Email) error {
 	}
 
 	// ------------------------------------------------------------------------------
-	// 每小时更新一次:
-	//   - 用量
-	//   - 新闻
 	_, err = scheduler.AddFunc("0 * * * *", func() {
 		logs.Info("execute neo 'update dosage' and 'crawl news'")
 
@@ -28,7 +25,6 @@ func addNeoTask(neoCfg *config.Neo, emailCfg *config.Email) error {
 	}
 
 	// ------------------------------------------------------------------------------
-	// 每天 23:00 发送用量
 	_, err = scheduler.AddFunc("0 23 * * *", func() {
 		logs.Info("execute neo 'send dosage' task")
 
@@ -39,7 +35,6 @@ func addNeoTask(neoCfg *config.Neo, emailCfg *config.Email) error {
 	}
 
 	// ------------------------------------------------------------------------------
-	// 如果发现 news 更新, 在5分钟内发送消息
 	_, err = scheduler.AddFunc("*/5 * * * *", func() {
 		logs.Info("execute neo 'send news' task")
 
