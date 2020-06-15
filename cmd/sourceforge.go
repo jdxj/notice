@@ -28,7 +28,7 @@ var sourceforgeCmd = &cobra.Command{
 	Use:   "sourceforge",
 	Short: "add sourceforge subscription address",
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := config.AddSubAddr(sfFlags); err != nil {
+		if err := config.AddSubAddr(addFlag); err != nil {
 			fmt.Fprintf(os.Stderr, "add subscription address failed: %s", err)
 		} else {
 			fmt.Printf("add subscription address success")
@@ -36,7 +36,9 @@ var sourceforgeCmd = &cobra.Command{
 	},
 }
 
-var sfFlags string
+var (
+	addFlag string
+)
 
 func init() {
 	rootCmd.AddCommand(sourceforgeCmd)
@@ -52,5 +54,5 @@ func init() {
 	// sourceforgeCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	sfCmd := sourceforgeCmd
 
-	sfCmd.Flags().StringVarP(&sfFlags, "add", "a", "", "rss address")
+	sfCmd.Flags().StringVarP(&addFlag, "add", "a", "", "add rss address")
 }
