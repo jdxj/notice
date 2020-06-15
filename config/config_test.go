@@ -1,34 +1,22 @@
 package config
 
-import (
-	"testing"
-)
+import "testing"
 
 const (
 	testKey   = "hello"
 	testValue = "world"
 )
 
-func TestGet(t *testing.T) {
-	value, err := cache.Get([]byte(testKey))
+func TestOpenMultiDBFiles(t *testing.T) {
+	c1, err := NewCache(CachePath)
 	if err != nil {
-		t.Fatalf("%s\n", err)
+		t.Fatalf("c1: %s\n", err)
 	}
+	defer c1.Close()
 
-	if string(value) != testValue {
-		t.Fatalf("value not equal: %s\n", value)
-	}
-
-	cache.db.Sync()
-	cache.db.Close()
-}
-
-func TestSet(t *testing.T) {
-	err := cache.Set([]byte(testKey), []byte(testValue))
+	c2, err := NewCache(CachePath)
 	if err != nil {
-		t.Fatalf("%s\n", err)
+		t.Fatalf("c2: %s\n", err)
 	}
-
-	cache.db.Sync()
-	cache.db.Close()
+	defer c2.Close()
 }

@@ -16,12 +16,7 @@ import (
 	"github.com/astaxie/beego/logs"
 )
 
-func NewFlow() (*Flow, error) {
-	neoCfg, err := config.GetNeo()
-	if err != nil {
-		return nil, err
-	}
-
+func NewFlow(neoCfg *config.Neo, emailCfg *config.Email) (*Flow, error) {
 	c := client.NewClientCookie(
 		neoCfg.Host,
 		neoCfg.Cookies,
@@ -30,6 +25,7 @@ func NewFlow() (*Flow, error) {
 
 	flow := &Flow{
 		client:      c,
+		sender:      email.NewSender(emailCfg),
 		neoCfg:      neoCfg,
 		dosageMutex: &sync.Mutex{},
 		newsMutex:   &sync.Mutex{},
@@ -46,6 +42,8 @@ const (
 
 type Flow struct {
 	client *http.Client
+	sender *email.Sender
+
 	neoCfg *config.Neo
 
 	// dosageMutex 保护以下字段
@@ -151,7 +149,8 @@ func (flow *Flow) SendDosage() {
 		flow.TodayUsed(),
 		flow.TotalUsed())
 
-	if err := email.SendTextSelf(subject, content); err != nil {
+	sender := flow.sender
+	if err := sender.SendTextSelf(subject, content); err != nil {
 		logs.Error("send dosage failed: %s", err)
 	}
 }
@@ -196,7 +195,9 @@ func (flow *Flow) SendLastNews() {
 
 	subject := "新消息"
 	content := news.String()
-	if err := email.SendTextSelf(subject, content); err != nil {
+
+	sender := flow.sender
+	if err := sender.SendTextSelf(subject, content); err != nil {
 		logs.Error("send last news failed: %s", err)
 		return
 	}

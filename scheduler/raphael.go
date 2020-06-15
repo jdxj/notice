@@ -2,11 +2,13 @@ package scheduler
 
 import (
 	"github.com/astaxie/beego/logs"
+	"github.com/jdxj/notice/config"
+
 	"github.com/jdxj/notice/app/raphael"
 )
 
-func addRaphaelTask() {
-	rap := raphael.NewRaphael()
+func addRaphaelTask(emailCfg *config.Email) error {
+	rap := raphael.NewRaphael(emailCfg)
 
 	// ------------------------------------------------------------------------------
 	// 每6个小时更新一次
@@ -19,8 +21,7 @@ func addRaphaelTask() {
 		rap.UpdateItemIm()
 	})
 	if err != nil {
-		logs.Error("add raphael 'update item' task failed: %s", err)
-		return
+		return err
 	}
 
 	// ------------------------------------------------------------------------------
@@ -34,7 +35,8 @@ func addRaphaelTask() {
 		rap.SendUpdateIm()
 	})
 	if err != nil {
-		logs.Error("add raphael 'send update' task failed: %s", err)
-		return
+		return err
 	}
+
+	return nil
 }

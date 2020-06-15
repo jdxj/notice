@@ -16,12 +16,12 @@ limitations under the License.
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/astaxie/beego/logs"
-	"github.com/jdxj/notice/config"
 	"github.com/jdxj/notice/scheduler"
 	"github.com/spf13/cobra"
 )
@@ -31,8 +31,10 @@ var startCmd = &cobra.Command{
 	Use:   "start",
 	Short: "run task",
 	Run: func(cmd *cobra.Command, args []string) {
-		scheduler.Start()
-
+		if err := scheduler.Start(); err != nil {
+			fmt.Fprintf(os.Stderr, "start tasks failed: %s", err)
+			return
+		}
 		block()
 	},
 }
@@ -62,6 +64,5 @@ func block() {
 	}
 
 	scheduler.Stop()
-	config.Close()
 	logs.GetBeeLogger().Close()
 }

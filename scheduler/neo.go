@@ -2,14 +2,15 @@ package scheduler
 
 import (
 	"github.com/astaxie/beego/logs"
+
 	"github.com/jdxj/notice/app/neoproxy"
+	"github.com/jdxj/notice/config"
 )
 
-func addNeoTask() {
-	flow, err := neoproxy.NewFlow()
+func addNeoTask(neoCfg *config.Neo, emailCfg *config.Email) error {
+	flow, err := neoproxy.NewFlow(neoCfg, emailCfg)
 	if err != nil {
-		logs.Error("new flow failed: %s", err)
-		return
+		return err
 	}
 
 	// ------------------------------------------------------------------------------
@@ -23,8 +24,7 @@ func addNeoTask() {
 		flow.CrawlLastNews()
 	})
 	if err != nil {
-		logs.Error("add neo 'update dosage' and 'crawl news' task failed: %s", err)
-		return
+		return err
 	}
 
 	// ------------------------------------------------------------------------------
@@ -35,8 +35,7 @@ func addNeoTask() {
 		flow.SendDosage()
 	})
 	if err != nil {
-		logs.Error("add neo 'send dosage' task failed: %s", err)
-		return
+		return err
 	}
 
 	// ------------------------------------------------------------------------------
@@ -47,7 +46,8 @@ func addNeoTask() {
 		flow.SendLastNews()
 	})
 	if err != nil {
-		logs.Error("add neo 'send news' task failed: %s", err)
-		return
+		return err
 	}
+
+	return nil
 }

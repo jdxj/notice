@@ -4,25 +4,22 @@ const (
 	CachePath = "cache.db"
 )
 
-var (
-	cache = NewCache(CachePath)
-)
-
-func Close() error {
-	return cache.Close()
-}
-func GetEmail() (*Email, error) {
-	return cache.GetEmail()
-}
-
 func SetEmail(email *Email) error {
+	cache, err := NewCache(CachePath)
+	if err != nil {
+		return err
+	}
+	defer cache.Close()
+
 	return cache.SetEmail(email)
 }
 
-func GetNeo() (*Neo, error) {
-	return cache.GetNeo()
-}
-
 func SetNeo(neo *Neo) error {
+	cache, err := NewCache(CachePath)
+	if err != nil {
+		return err
+	}
+	defer cache.Close()
+
 	return cache.SetNeo(neo)
 }

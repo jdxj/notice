@@ -7,6 +7,8 @@ import (
 	"net/http/cookiejar"
 	"sync"
 
+	"github.com/jdxj/notice/config"
+
 	"github.com/jdxj/notice/email"
 
 	"github.com/astaxie/beego/logs"
@@ -18,7 +20,7 @@ const (
 	RSSImURL    = "https://sourceforge.net/projects/unofficialbuilds/rss?path=/raphael/kernel"
 )
 
-func NewRaphael() *Raphael {
+func NewRaphael(emailCfg *config.Email) *Raphael {
 	jar, _ := cookiejar.New(nil)
 	c := &http.Client{
 		Jar: jar,
@@ -26,6 +28,7 @@ func NewRaphael() *Raphael {
 
 	r := &Raphael{
 		client:  c,
+		sender:  email.NewSender(emailCfg),
 		mutex:   &sync.Mutex{},
 		mutexIm: &sync.Mutex{},
 	}
@@ -34,6 +37,7 @@ func NewRaphael() *Raphael {
 
 type Raphael struct {
 	client *http.Client
+	sender *email.Sender
 
 	// mutex 保护以下字段
 	mutex *sync.Mutex
@@ -81,7 +85,9 @@ func (r *Raphael) SendUpdate() {
 
 	subject := "Evolution-x Raphael 已更新"
 	content, _ := xml.MarshalIndent(item, "", "    ")
-	if err := email.SendTextSelfBytes(subject, content); err != nil {
+
+	sender := r.sender
+	if err := sender.SendTextSelfBytes(subject, content); err != nil {
 		logs.Error("send update failed: %s", err)
 	}
 }
@@ -135,7 +141,9 @@ func (r *Raphael) SendUpdateIm() {
 
 	subject := "iMMENSITY 已更新"
 	content, _ := xml.MarshalIndent(item, "", "    ")
-	if err := email.SendTextSelfBytes(subject, content); err != nil {
+
+	sender := r.sender
+	if err := sender.SendTextSelfBytes(subject, content); err != nil {
 		logs.Error("send updateIm failed: %s", err)
 	}
 }

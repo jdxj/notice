@@ -8,19 +8,19 @@ type Cache struct {
 	db *badger.DB
 }
 
-func NewCache(path string) *Cache {
+func NewCache(path string) (*Cache, error) {
 	opt := badger.DefaultOptions(path)
 	opt.Logger = nil
 
 	db, err := badger.Open(opt)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	cache := &Cache{
 		db: db,
 	}
-	return cache
+	return cache, nil
 }
 
 func (c *Cache) Get(key []byte) ([]byte, error) {
@@ -47,11 +47,6 @@ func (c *Cache) Set(key, value []byte) error {
 	}
 
 	return c.db.Sync()
-}
-
-// todo: 实现, 检查所有配置是否已缓存
-func (c *Cache) Check() {
-
 }
 
 func (c *Cache) Close() error {

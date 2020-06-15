@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"net/smtp"
 
-	"github.com/astaxie/beego/logs"
-
 	"github.com/jdxj/notice/config"
 
 	"github.com/jordan-wright/email"
@@ -23,28 +21,21 @@ const (
 	Html
 )
 
-var (
-	emailCfg *config.Email
-)
-
-func init() {
-	logs.Info("check email cfg")
-
-	cfg, err := config.GetEmail()
-	if err != nil {
-		logs.Error("get email cfg failed: %s", err)
-		return
+func NewSender(cfg *config.Email) *Sender {
+	sender := &Sender{
+		e:        email.NewEmail(),
+		emailCfg: cfg,
 	}
-
-	emailCfg = cfg
-	logs.Info("check email cfg success")
+	return sender
 }
 
-func Send(format ContentFormat, subject string, data []byte, to ...string) error {
-	if emailCfg == nil {
-		return fmt.Errorf("email cfg not found:\n\tsubject: %s\n\tdata: %s",
-			subject, data)
-	}
+type Sender struct {
+	e        *email.Email
+	emailCfg *config.Email
+}
+
+func (s *Sender) Send(format ContentFormat, subject string, data []byte, to ...string) error {
+	emailCfg := s.emailCfg
 
 	e := email.NewEmail()
 	e.Subject = subject
@@ -61,13 +52,16 @@ func Send(format ContentFormat, subject string, data []byte, to ...string) error
 	return e.Send(addr, smtp.PlainAuth("", emailCfg.Addr, emailCfg.Token, host))
 }
 
-func SendTextSelf(subject, content string) error {
-	return Send(Text, subject, []byte(content), emailCfg.Addr)
+func (s *Sender) SendTextSelf(subject, content string) error {
+	emailCfg := s.emailCfg
+	return s.Send(Text, subject, []byte(content), emailCfg.Addr)
 }
-func SendTextSelfBytes(subject string, content []byte) error {
-	return Send(Text, subject, content, emailCfg.Addr)
+func (s *Sender) SendTextSelfBytes(subject string, content []byte) error {
+	emailCfg := s.emailCfg
+	return s.Send(Text, subject, content, emailCfg.Addr)
 }
 
-func SendHTMLSelf(subject, content string) error {
-	return Send(Html, subject, []byte(content), emailCfg.Addr)
+func (s *Sender) SendHTMLSelf(subject, content string) error {
+	emailCfg := s.emailCfg
+	return s.Send(Html, subject, []byte(content), emailCfg.Addr)
 }
