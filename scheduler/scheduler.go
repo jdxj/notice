@@ -29,11 +29,16 @@ func Start() error {
 		return err
 	}
 
+	sfCfg, err := cache.GetSourceforge()
+	if err != nil {
+		return err
+	}
+
 	// 注册任务
 	if err := addNeoTask(neoCfg, emailCfg); err != nil {
 		return err
 	}
-	if err := addRaphaelTask(emailCfg); err != nil {
+	if err := addMultiSourceforgeTask(sfCfg, emailCfg); err != nil {
 		return err
 	}
 

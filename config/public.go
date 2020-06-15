@@ -23,3 +23,13 @@ func SetNeo(neo *Neo) error {
 
 	return cache.SetNeo(neo)
 }
+
+func AddSubAddr(url string) error {
+	cache, err := NewCache(CachePath)
+	if err != nil {
+		return err
+	}
+	defer cache.Close()
+
+	return cache.AddSubsAddr(url)
+}

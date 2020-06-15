@@ -7,8 +7,21 @@ import (
 	"github.com/jdxj/notice/app/raphael"
 )
 
-func addRaphaelTask(emailCfg *config.Email) error {
-	rap := raphael.NewRaphael(emailCfg)
+func addMultiSourceforgeTask(sfCfg *config.Sourceforge, emailCfg *config.Email) error {
+	if len(sfCfg.SubsAddr) <= 0 {
+		logs.Warn("have no sourceforge task")
+	}
+
+	for _, v := range sfCfg.SubsAddr {
+		if err := addSourceforgeTask(v, emailCfg); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func addSourceforgeTask(url string, emailCfg *config.Email) error {
+	rap := raphael.NewRaphael(url, emailCfg)
 
 	// ------------------------------------------------------------------------------
 	// 每6个小时更新一次
@@ -18,7 +31,6 @@ func addRaphaelTask(emailCfg *config.Email) error {
 		logs.Info("execute raphael 'update item' task")
 
 		rap.UpdateItem()
-		rap.UpdateItemIm()
 	})
 	if err != nil {
 		return err
@@ -32,7 +44,6 @@ func addRaphaelTask(emailCfg *config.Email) error {
 		logs.Info("execute raphael 'send update' task")
 
 		rap.SendUpdate()
-		rap.SendUpdateIm()
 	})
 	if err != nil {
 		return err
