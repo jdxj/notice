@@ -15,7 +15,7 @@ func addNeoTask(neoCfg *config.Neo, emailCfg *config.Email) error {
 
 	// ------------------------------------------------------------------------------
 	_, err = scheduler.AddFunc("0 * * * *", func() {
-		logs.Info("execute neo 'update dosage' and 'crawl news'")
+		logs.Info("execute neo 'update dosage' and 'crawl news' task")
 
 		flow.UpdateDosage()
 		flow.CrawlLastNews()

@@ -34,13 +34,17 @@ func Start() error {
 		return err
 	}
 
-	// 注册任务
+	// 注册任务 ------------------------------------------------------
 	if err := addNeoTask(neoCfg, emailCfg); err != nil {
 		return err
 	}
 	if err := addMultiSourceforgeTask(sfCfg, emailCfg); err != nil {
 		return err
 	}
+	if err := addRuanYiFengTask(emailCfg); err != nil {
+		return err
+	}
+	// -------------------------------------------------------------
 
 	logs.Info("start scheduled tasks")
 	scheduler.Start()

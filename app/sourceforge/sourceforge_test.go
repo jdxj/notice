@@ -13,7 +13,8 @@ import (
 type Root struct {
 	XMLName xml.Name `xml:"root"`
 
-	Hello *Hello `xml:"hello"`
+	Hello  *Hello  `xml:"hello"`
+	Hello2 *Hello2 `xml:"hello2"`
 }
 
 type Hello struct {
@@ -26,7 +27,7 @@ type Hello struct {
 
 type Hello2 struct {
 	XMLName xml.Name `xml:"hello2"`
-	Pen1    string   `xml:",cdata"`
+	Pen1    string   `xml:",attr"`
 	Pen2    string   `xml:",cdata"`
 }
 
@@ -38,6 +39,21 @@ type World struct {
 
 type Pen struct {
 	Data string `xml:",cdata"`
+}
+
+func TestXMLEleCDATA(t *testing.T) {
+	h2 := &Hello2{
+		Pen1: "apple",
+		Pen2: "pen",
+	}
+	r := &Root{
+		Hello2: h2,
+	}
+	data, err := xml.MarshalIndent(r, "", "  ")
+	if err != nil {
+		t.Fatalf("%s\n", err)
+	}
+	fmt.Printf("%s\n", data)
 }
 
 func TestMultiCDATA(t *testing.T) {

@@ -2,6 +2,7 @@ package client
 
 import (
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -38,6 +39,10 @@ func NewRequestUserAgent(method, url string, body io.Reader) (*http.Request, err
 	return req, nil
 }
 
+func NewRequestUserAgentGet(url string) (*http.Request, error) {
+	return NewRequestUserAgent(http.MethodGet, url, nil)
+}
+
 func StringToCookies(cookiesStr, domain string) []*http.Cookie {
 	// 过滤引号
 	cookiesStr = strings.ReplaceAll(cookiesStr, `"`, ``)
@@ -69,4 +74,14 @@ func StringToCookies(cookiesStr, domain string) []*http.Cookie {
 	}
 
 	return cookies
+}
+
+func ReadResponseBody(c *http.Client, req *http.Request) ([]byte, error) {
+	resp, err := c.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	return ioutil.ReadAll(resp.Body)
 }

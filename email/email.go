@@ -65,3 +65,8 @@ func (s *Sender) SendHTMLSelf(subject, content string) error {
 	emailCfg := s.emailCfg
 	return s.Send(Html, subject, []byte(content), emailCfg.Addr)
 }
+
+func (s *Sender) SendHTMLSelfBytes(subject string, content []byte) error {
+	emailCfg := s.emailCfg
+	return s.Send(Html, subject, content, emailCfg.Addr)
+}

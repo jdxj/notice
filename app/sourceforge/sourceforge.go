@@ -82,6 +82,7 @@ func (r *Sourceforge) SendUpdate() {
 	sender := r.sender
 	if err := sender.SendTextSelfBytes(subject, content); err != nil {
 		logs.Error("send update failed: %s", err)
+		return
 	}
 }
 

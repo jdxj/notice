@@ -152,6 +152,7 @@ func (flow *Flow) SendDosage() {
 	sender := flow.sender
 	if err := sender.SendTextSelf(subject, content); err != nil {
 		logs.Error("send dosage failed: %s", err)
+		return
 	}
 }
 
