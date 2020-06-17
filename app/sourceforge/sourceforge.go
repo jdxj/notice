@@ -7,12 +7,11 @@ import (
 	"net/http/cookiejar"
 	"sync"
 
-	"github.com/jdxj/notice/config"
-
-	"github.com/jdxj/notice/email"
-
 	"github.com/astaxie/beego/logs"
+
 	"github.com/jdxj/notice/client"
+	"github.com/jdxj/notice/config"
+	"github.com/jdxj/notice/email"
 )
 
 func NewSourceforge(rssURL string, emailCfg *config.Email) *Sourceforge {
