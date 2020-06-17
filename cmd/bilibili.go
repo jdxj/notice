@@ -23,36 +23,37 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// sourceforgeCmd represents the sourceforge command
-var sourceforgeCmd = &cobra.Command{
-	Use:   "sourceforge",
-	Short: "add sourceforge subscription address",
+// bilibiliCmd represents the bilibili command
+var bilibiliCmd = &cobra.Command{
+	Use:   "bilibili",
+	Short: "set bilibili config",
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := config.AddSourceforgeSubAddr(addFlag); err != nil {
-			fmt.Fprintf(os.Stderr, "add subscription address failed: %s\n", err)
+		if err := config.AddBiliBiliCookie(biliEmail, biliCookie); err != nil {
+			fmt.Fprintf(os.Stderr, "add bilibili cookie failed: %s\n", err)
 		} else {
-			fmt.Printf("add subscription address success\n")
+			fmt.Printf("add bilibili cookie success\n")
 		}
 	},
 }
 
 var (
-	addFlag string
+	biliEmail  string
+	biliCookie string
 )
 
 func init() {
-	rootCmd.AddCommand(sourceforgeCmd)
+	rootCmd.AddCommand(bilibiliCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// sourceforgeCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// bilibiliCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// sourceforgeCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	sfCmd := sourceforgeCmd
+	// bilibiliCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 
-	sfCmd.Flags().StringVarP(&addFlag, "add", "a", "", "add rss address")
+	bilibiliCmd.Flags().StringVarP(&biliEmail, "email", "e", "", "add notify address")
+	bilibiliCmd.Flags().StringVarP(&biliCookie, "cookie", "c", "", "add bilibili cookie")
 }

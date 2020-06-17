@@ -70,3 +70,7 @@ func (s *Sender) SendHTMLSelfBytes(subject string, content []byte) error {
 	emailCfg := s.emailCfg
 	return s.Send(Html, subject, content, emailCfg.Addr)
 }
+
+func (s *Sender) SendTextOther(subject, content string, to ...string) error {
+	return s.Send(Text, subject, []byte(content), to...)
+}

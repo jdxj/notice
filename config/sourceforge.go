@@ -18,8 +18,7 @@ type Sourceforge struct {
 func (c *Cache) GetSourceforge() (*Sourceforge, error) {
 	data, err := c.Get(sourceforgeKey)
 	if err != nil {
-		return nil, fmt.Errorf("cat not get data, key: %s, err: %s",
-			sourceforgeKey, err)
+		return nil, err
 	}
 
 	sf := &Sourceforge{}
@@ -39,21 +38,13 @@ func (c *Cache) AddSubsAddr(rssURL string) error {
 		return fmt.Errorf("rss address invalid")
 	}
 
-	// 这里要使用 badger 中定义的 error, 所以没有调用 Cache.GetSourceforge()
-	data, err := c.Get(sourceforgeKey)
+	sf, err := c.GetSourceforge()
 	if err != nil {
 		if err != badger.ErrKeyNotFound {
-			return fmt.Errorf("cat not get data, key: %s, err: %s",
-				sourceforgeKey, err)
+			return fmt.Errorf("add subscription address failed: %s", err)
 		}
 
 		return c.SetSubsAddr(rssURL)
-	}
-
-	// 取出已缓存的 url
-	sf := &Sourceforge{}
-	if err := json.Unmarshal(data, sf); err != nil {
-		return err
 	}
 
 	// 查重
@@ -64,6 +55,6 @@ func (c *Cache) AddSubsAddr(rssURL string) error {
 	}
 
 	sf.SubsAddr = append(sf.SubsAddr, rssURL)
-	data, _ = json.Marshal(sf)
+	data, _ := json.Marshal(sf)
 	return c.Set(sourceforgeKey, data)
 }
