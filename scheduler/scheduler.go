@@ -18,21 +18,24 @@ func Start() error {
 	}
 	defer cache.Close()
 
-	// 获取配置
+	// 获取配置 ----------------------------------
 	neoCfg, err := cache.GetNeo()
 	if err != nil {
 		return err
 	}
-
 	emailCfg, err := cache.GetEmail()
 	if err != nil {
 		return err
 	}
-
 	sfCfg, err := cache.GetSourceforge()
 	if err != nil {
 		return err
 	}
+	biliCfg, err := cache.GetBiliBili()
+	if err != nil {
+		return err
+	}
+	// -----------------------------------------
 
 	// 注册任务 ------------------------------------------------------
 	if err := addNeoTask(neoCfg, emailCfg); err != nil {
@@ -42,6 +45,9 @@ func Start() error {
 		return err
 	}
 	if err := addRuanYiFengTask(emailCfg); err != nil {
+		return err
+	}
+	if err := addMultiBiliBiliTask(biliCfg, emailCfg); err != nil {
 		return err
 	}
 	// -------------------------------------------------------------
