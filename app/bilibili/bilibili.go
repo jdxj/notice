@@ -185,8 +185,7 @@ func (bili *BiliBili) sendCoinsNum() error {
 	}
 
 	subject := fmt.Sprintf("<BiliBili Coins Number>")
-	content := fmt.Sprintf("硬币余额: %d\n如果发现硬币余额未增加, 可能是系统未更新",
-		coinIfo.Money)
+	content := fmt.Sprintf("硬币余额: %d", coinIfo.Money)
 
 	sender := bili.sender
 	return sender.SendTextOther(subject, content, bili.emailAddr)
