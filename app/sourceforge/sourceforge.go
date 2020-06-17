@@ -3,7 +3,6 @@ package sourceforge
 import (
 	"encoding/xml"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
 	"sync"
@@ -44,9 +43,14 @@ type Sourceforge struct {
 }
 
 func (r *Sourceforge) UpdateItem() {
-	data, err := r.readRespBody(r.url)
+	req, err := client.NewRequestUserAgentGet(r.url)
 	if err != nil {
-		logs.Error("read all failed, err: %s, url: %s", err, r.url)
+		logs.Error("new request failed: %s", err)
+		return
+	}
+	data, err := client.ReadResponseBody(r.client, req)
+	if err != nil {
+		logs.Error("read response body failed: %s", err)
 		return
 	}
 
@@ -84,18 +88,4 @@ func (r *Sourceforge) SendUpdate() {
 		logs.Error("send update failed: %s", err)
 		return
 	}
-}
-
-func (r *Sourceforge) readRespBody(url string) ([]byte, error) {
-	req, err := client.NewRequestUserAgent(http.MethodGet, url, nil)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := r.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	return ioutil.ReadAll(resp.Body)
 }
