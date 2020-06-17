@@ -15,6 +15,11 @@ type BiliBili struct {
 	Cookies map[string]string `json:"cookies"`
 }
 
+func (bili *BiliBili) String() string {
+	data, _ := json.MarshalIndent(bili, "", "    ")
+	return fmt.Sprintf("%s", data)
+}
+
 func (c *Cache) GetBiliBili() (*BiliBili, error) {
 	data, err := c.Get(bilibiliKey)
 	if err != nil {

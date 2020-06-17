@@ -14,11 +14,15 @@ type Email struct {
 	Token string `json:"token"`
 }
 
+func (e *Email) String() string {
+	data, _ := json.MarshalIndent(e, "", "    ")
+	return fmt.Sprintf("%s", data)
+}
+
 func (c *Cache) GetEmail() (*Email, error) {
 	data, err := c.Get(emailKey)
 	if err != nil {
-		return nil, fmt.Errorf("can not get data, key: %s, err: %s",
-			emailKey, err)
+		return nil, err
 	}
 
 	email := &Email{}

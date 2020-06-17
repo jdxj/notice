@@ -17,11 +17,15 @@ type Neo struct {
 	User     string `json:"user"`
 }
 
+func (neo *Neo) String() string {
+	data, _ := json.MarshalIndent(neo, "", "    ")
+	return fmt.Sprintf("%s", data)
+}
+
 func (c *Cache) GetNeo() (*Neo, error) {
 	data, err := c.Get(neoKey)
 	if err != nil {
-		return nil, fmt.Errorf("can not get data, key: %s, err: %s",
-			neoKey, err)
+		return nil, err
 	}
 
 	neo := &Neo{}

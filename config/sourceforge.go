@@ -15,6 +15,11 @@ type Sourceforge struct {
 	SubsAddr []string `json:"subs_addr"`
 }
 
+func (sf *Sourceforge) String() string {
+	data, _ := json.MarshalIndent(sf, "", "    ")
+	return fmt.Sprintf("%s", data)
+}
+
 func (c *Cache) GetSourceforge() (*Sourceforge, error) {
 	data, err := c.Get(sourceforgeKey)
 	if err != nil {
