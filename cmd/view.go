@@ -43,6 +43,8 @@ type viewFlags struct {
 	bilibiliFlag    bool
 	neoFlag         bool
 	sourceforgeFlag bool
+	emailFlag       bool
+	ryfFlag         bool
 }
 
 func init() {
@@ -60,13 +62,15 @@ func init() {
 
 	viewCmd.Flags().BoolVarP(&vf.bilibiliFlag, "bilibili", "b", true, "view BiliBili's config")
 	viewCmd.Flags().BoolVarP(&vf.neoFlag, "neo", "n", true, "view neo_proxy's config")
-	viewCmd.Flags().BoolVarP(&vf.sourceforgeFlag, "sourceforge", "s", true, "vie sourceforge config")
+	viewCmd.Flags().BoolVarP(&vf.sourceforgeFlag, "sourceforge", "s", true, "view sourceforge config")
+	viewCmd.Flags().BoolVarP(&vf.emailFlag, "email", "e", true, "view email config")
+	viewCmd.Flags().BoolVarP(&vf.ryfFlag, "ryf", "r", true, "view ruanyifeng config")
 }
 
 func printConfig(vf *viewFlags) {
 	var result string
 	defer func() {
-		fmt.Printf("%s\n", result)
+		fmt.Printf("%s", result)
 	}()
 
 	if vf.bilibiliFlag {
@@ -76,7 +80,7 @@ func printConfig(vf *viewFlags) {
 				fmt.Fprintf(os.Stderr, "%s\n", err)
 			}
 		} else {
-			result = fmt.Sprintf("%s\nbilibili config:\n%s", result, b)
+			result = fmt.Sprintf("%s\nbilibili config:\n%s\n", result, b)
 		}
 	}
 
@@ -87,7 +91,7 @@ func printConfig(vf *viewFlags) {
 				fmt.Fprintf(os.Stderr, "%s\n", err)
 			}
 		} else {
-			result = fmt.Sprintf("%s\nneo config:\n%s", result, n)
+			result = fmt.Sprintf("%s\nneo config:\n%s\n", result, n)
 		}
 	}
 
@@ -98,7 +102,29 @@ func printConfig(vf *viewFlags) {
 				fmt.Fprintf(os.Stderr, "%s\n", err)
 			}
 		} else {
-			result = fmt.Sprintf("%s\nsourceforge config:\n%s", result, s)
+			result = fmt.Sprintf("%s\nsourceforge config:\n%s\n", result, s)
+		}
+	}
+
+	if vf.emailFlag {
+		e, err := config.GetEmail()
+		if err != nil {
+			if err != badger.ErrKeyNotFound {
+				fmt.Fprintf(os.Stderr, "%s\n", err)
+			}
+		} else {
+			result = fmt.Sprintf("%s\nemail config:\n%s\n", result, e)
+		}
+	}
+
+	if vf.ryfFlag {
+		e, err := config.GetRYF()
+		if err != nil {
+			if err != badger.ErrKeyNotFound {
+				fmt.Fprintf(os.Stderr, "%s\n", err)
+			}
+		} else {
+			result = fmt.Sprintf("%s\nruanyifeng config:\n%s\n", result, e)
 		}
 	}
 }

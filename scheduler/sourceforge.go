@@ -2,9 +2,9 @@ package scheduler
 
 import (
 	"github.com/astaxie/beego/logs"
-	"github.com/jdxj/notice/config"
 
 	"github.com/jdxj/notice/app/sourceforge"
+	"github.com/jdxj/notice/config"
 )
 
 func addMultiSourceforgeTask(sfCfg *config.Sourceforge) error {
