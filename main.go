@@ -17,7 +17,7 @@ func main() {
 	}
 
 	// 关闭一些资源
-	if err := config.DataStorage.Close(); err != nil {
+	if err := config.Close(); err != nil {
 		logs.Error("close DataStorage failed: %s", err)
 	}
 	beeLogger := logs.GetBeeLogger()

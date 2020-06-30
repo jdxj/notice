@@ -43,8 +43,7 @@ type Flow struct {
 }
 
 func (flow *Flow) NotifyDosage() {
-	ds := config.DataStorage
-	neoCfg, err := ds.GetNeo()
+	neoCfg, err := config.GetNeo()
 	if err != nil {
 		logs.Error("get neo config failed: %s", err)
 		return

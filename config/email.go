@@ -19,8 +19,8 @@ func (e *Email) String() string {
 	return fmt.Sprintf("%s", data)
 }
 
-func (c *Cache) GetEmail() (*Email, error) {
-	data, err := c.Get(emailKey)
+func GetEmail() (*Email, error) {
+	data, err := get(emailKey)
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +29,7 @@ func (c *Cache) GetEmail() (*Email, error) {
 	return email, json.Unmarshal(data, email)
 }
 
-func (c *Cache) SetEmail(email *Email) error {
+func SetEmail(email *Email) error {
 	data, _ := json.Marshal(email)
-	return c.Set(emailKey, data)
+	return set(emailKey, data)
 }

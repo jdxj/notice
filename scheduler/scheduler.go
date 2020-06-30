@@ -12,10 +12,8 @@ var (
 )
 
 func Start() error {
-	ds := config.DataStorage
-
 	// 获取配置 ----------------------------------
-	sfCfg, err := ds.GetSourceforge()
+	sfCfg, err := config.GetSourceforge()
 	if err != nil {
 		return err
 	}

@@ -80,8 +80,7 @@ func (r *Sourceforge) SendUpdate() {
 	subject := fmt.Sprintf("<%s> 已更新", item.Title.Data)
 	content, _ := xml.MarshalIndent(item, "", "    ")
 
-	ds := config.DataStorage
-	emailCfg, err := ds.GetEmail()
+	emailCfg, err := config.GetEmail()
 	if err != nil {
 		logs.Error("get sourceforge config failed: %s", err)
 		return

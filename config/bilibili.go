@@ -20,8 +20,8 @@ func (bili *BiliBili) String() string {
 	return fmt.Sprintf("%s", data)
 }
 
-func (c *Cache) GetBiliBili() (*BiliBili, error) {
-	data, err := c.Get(bilibiliKey)
+func GetBiliBili() (*BiliBili, error) {
+	data, err := get(bilibiliKey)
 	if err != nil {
 		return nil, err
 	}
@@ -30,29 +30,29 @@ func (c *Cache) GetBiliBili() (*BiliBili, error) {
 	return bili, json.Unmarshal(data, bili)
 }
 
-func (c *Cache) SetBiliCookie(emailAddr, cookie string) error {
+func SetBiliCookie(emailAddr, cookie string) error {
 	bili := &BiliBili{}
 	bili.Cookies = map[string]string{
 		emailAddr: cookie,
 	}
 	data, _ := json.Marshal(bili)
-	return c.Set(bilibiliKey, data)
+	return set(bilibiliKey, data)
 }
 
-func (c *Cache) AddBiliCookie(emailAddr, cookie string) error {
+func AddBiliCookie(emailAddr, cookie string) error {
 	if emailAddr == "" || cookie == "" {
 		return fmt.Errorf("email or cookie is empty")
 	}
 
-	bili, err := c.GetBiliBili()
+	bili, err := GetBiliBili()
 	if err != nil {
 		if err != badger.ErrKeyNotFound {
 			return fmt.Errorf("add cookie failed: %s", err)
 		}
-		return c.SetBiliCookie(emailAddr, cookie)
+		return SetBiliCookie(emailAddr, cookie)
 	}
 
 	bili.Cookies[emailAddr] = cookie
 	data, _ := json.Marshal(bili)
-	return c.Set(bilibiliKey, data)
+	return set(bilibiliKey, data)
 }

@@ -80,8 +80,7 @@ func (ryf *RuanYiFeng) SendUpdate() {
 	subject := fmt.Sprintf("<阮一峰的网络日志> 已更新")
 	content := entry.Content.Data
 
-	ds := config.DataStorage
-	ryfCfg, err := ds.GetRYF()
+	ryfCfg, err := config.GetRYF()
 	if err != nil {
 		logs.Error("get ryf config failed: %s", err)
 		return

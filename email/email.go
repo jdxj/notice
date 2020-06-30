@@ -3,6 +3,7 @@ package email
 import (
 	"fmt"
 	"net/smtp"
+	"os"
 
 	"github.com/jdxj/notice/config"
 
@@ -26,12 +27,12 @@ var (
 )
 
 func init() {
-	var err error
-	ds := config.DataStorage
-	emailCfg, err = ds.GetEmail()
+	cfg, err := config.GetEmail()
 	if err != nil {
-		panic(err)
+		fmt.Fprintf(os.Stderr, "[Error] can not get email config: %s\n\n", err)
+		return
 	}
+	emailCfg = cfg
 }
 
 func send(format ContentFormat, subject string, data []byte, to ...string) error {

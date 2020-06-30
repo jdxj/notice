@@ -29,8 +29,7 @@ var emailCmd = &cobra.Command{
 	Use:   "email",
 	Short: "set email config",
 	Run: func(cmd *cobra.Command, args []string) {
-		ds := config.DataStorage
-		if err := ds.SetEmail(emailFlags); err != nil {
+		if err := config.SetEmail(emailFlags); err != nil {
 			fmt.Fprintf(os.Stderr, "set email config failed: %s\n", err)
 		} else {
 			fmt.Printf("set email success\n")

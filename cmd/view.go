@@ -64,14 +64,13 @@ func init() {
 }
 
 func printConfig(vf *viewFlags) {
-	ds := config.DataStorage
 	var result string
 	defer func() {
 		fmt.Printf("%s\n", result)
 	}()
 
 	if vf.bilibiliFlag {
-		b, err := ds.GetBiliBili()
+		b, err := config.GetBiliBili()
 		if err != nil {
 			if err != badger.ErrKeyNotFound {
 				fmt.Fprintf(os.Stderr, "%s\n", err)
@@ -82,7 +81,7 @@ func printConfig(vf *viewFlags) {
 	}
 
 	if vf.neoFlag {
-		n, err := ds.GetNeo()
+		n, err := config.GetNeo()
 		if err != nil {
 			if err != badger.ErrKeyNotFound {
 				fmt.Fprintf(os.Stderr, "%s\n", err)
@@ -93,7 +92,7 @@ func printConfig(vf *viewFlags) {
 	}
 
 	if vf.sourceforgeFlag {
-		s, err := ds.GetSourceforge()
+		s, err := config.GetSourceforge()
 		if err != nil {
 			if err != badger.ErrKeyNotFound {
 				fmt.Fprintf(os.Stderr, "%s\n", err)

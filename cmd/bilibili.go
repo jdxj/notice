@@ -28,8 +28,7 @@ var bilibiliCmd = &cobra.Command{
 	Use:   "bilibili",
 	Short: "set bilibili config",
 	Run: func(cmd *cobra.Command, args []string) {
-		ds := config.DataStorage
-		if err := ds.AddBiliCookie(biliEmail, biliCookie); err != nil {
+		if err := config.AddBiliCookie(biliEmail, biliCookie); err != nil {
 			fmt.Fprintf(os.Stderr, "add bilibili cookie failed: %s\n", err)
 		} else {
 			fmt.Printf("add bilibili cookie success\n")

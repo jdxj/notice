@@ -22,17 +22,16 @@ func (neo *Neo) String() string {
 	return fmt.Sprintf("%s", data)
 }
 
-func (c *Cache) GetNeo() (*Neo, error) {
-	data, err := c.Get(neoKey)
+func GetNeo() (*Neo, error) {
+	data, err := get(neoKey)
 	if err != nil {
 		return nil, err
 	}
-
 	neo := &Neo{}
 	return neo, json.Unmarshal(data, neo)
 }
 
-func (c *Cache) SetNeo(neo *Neo) error {
+func SetNeo(neo *Neo) error {
 	data, _ := json.Marshal(neo)
-	return c.Set(neoKey, data)
+	return set(neoKey, data)
 }

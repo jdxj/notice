@@ -20,35 +20,34 @@ func (sf *Sourceforge) String() string {
 	return fmt.Sprintf("%s", data)
 }
 
-func (c *Cache) GetSourceforge() (*Sourceforge, error) {
-	data, err := c.Get(sourceforgeKey)
+func GetSourceforge() (*Sourceforge, error) {
+	data, err := get(sourceforgeKey)
 	if err != nil {
 		return nil, err
 	}
-
 	sf := &Sourceforge{}
 	return sf, json.Unmarshal(data, sf)
 }
 
-func (c *Cache) SetSFSubsAddr(rssURL string) error {
+func SetSFSubsAddr(rssURL string) error {
 	sf := &Sourceforge{}
 	sf.SubsAddr = append(sf.SubsAddr, rssURL)
 	data, _ := json.Marshal(sf)
-	return c.Set(sourceforgeKey, data)
+	return set(sourceforgeKey, data)
 }
 
-func (c *Cache) AddSFSubsAddr(rssURL string) error {
+func AddSFSubsAddr(rssURL string) error {
 	// url 检查
 	if rssURL == "" {
 		return fmt.Errorf("rss address invalid")
 	}
 
-	sf, err := c.GetSourceforge()
+	sf, err := GetSourceforge()
 	if err != nil {
 		if err != badger.ErrKeyNotFound {
 			return fmt.Errorf("add subscription address failed: %s", err)
 		}
-		return c.SetSFSubsAddr(rssURL)
+		return SetSFSubsAddr(rssURL)
 	}
 
 	// 查重
@@ -59,5 +58,5 @@ func (c *Cache) AddSFSubsAddr(rssURL string) error {
 	}
 	sf.SubsAddr = append(sf.SubsAddr, rssURL)
 	data, _ := json.Marshal(sf)
-	return c.Set(sourceforgeKey, data)
+	return set(sourceforgeKey, data)
 }

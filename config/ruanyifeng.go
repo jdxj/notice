@@ -20,17 +20,16 @@ func (ryf *RYF) String() string {
 	return fmt.Sprintf("%s", data)
 }
 
-func (c *Cache) GetRYF() (*RYF, error) {
-	data, err := c.Get(ryfKey)
+func GetRYF() (*RYF, error) {
+	data, err := get(ryfKey)
 	if err != nil {
 		return nil, err
 	}
-
 	ryf := &RYF{}
 	return ryf, json.Unmarshal(data, ryf)
 }
 
-func (c *Cache) SetRYF(emailAddr string) error {
+func SetRYF(emailAddr string) error {
 	if emailAddr == "" {
 		return nil
 	}
@@ -38,19 +37,19 @@ func (c *Cache) SetRYF(emailAddr string) error {
 	ryf := &RYF{}
 	ryf.Users = append(ryf.Users, emailAddr)
 	data, _ := json.Marshal(ryf)
-	return c.Set(ryfKey, data)
+	return set(ryfKey, data)
 }
 
-func (c *Cache) AddRYF(emailAddr string) error {
-	ryf, err := c.GetRYF()
+func AddRYF(emailAddr string) error {
+	ryf, err := GetRYF()
 	if err != nil {
 		if err != badger.ErrKeyNotFound {
 			return fmt.Errorf("add ryf failed: %s", err)
 		}
-		return c.SetRYF(emailAddr)
+		return SetRYF(emailAddr)
 	}
 
 	ryf.Users = append(ryf.Users, emailAddr)
 	data, _ := json.Marshal(ryf)
-	return c.Set(ryfKey, data)
+	return set(ryfKey, data)
 }

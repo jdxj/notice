@@ -47,8 +47,7 @@ type BiliBili struct {
 }
 
 func (bili *BiliBili) KeepCollect() {
-	ds := config.DataStorage
-	biliCfg, err := ds.GetBiliBili()
+	biliCfg, err := config.GetBiliBili()
 	if err != nil {
 		logs.Error("get bilibili config failed: %s", err)
 		return
