@@ -9,13 +9,11 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/jdxj/notice/client"
+	"github.com/jdxj/notice/config"
 	"github.com/jdxj/notice/email"
 
-	"github.com/jdxj/notice/config"
-
 	"github.com/astaxie/beego/logs"
-
-	"github.com/jdxj/notice/client"
 )
 
 const (

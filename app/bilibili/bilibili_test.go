@@ -4,18 +4,11 @@ import (
 	"fmt"
 	"math"
 	"testing"
-
-	"github.com/jdxj/notice/config"
 )
 
 func TestBiliBili_CollectCoins(t *testing.T) {
-	cookie := ""
-	emailCfg := &config.Email{
-		Addr:  "985759262@qq.com",
-		Token: "",
-	}
-	bili := NewBiliBili("985759262@qq.com", cookie, emailCfg)
-	bili.CollectCoins()
+	bili := NewBiliBili()
+	bili.KeepCollect()
 }
 
 func TestMathPow(t *testing.T) {

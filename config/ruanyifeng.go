@@ -49,6 +49,11 @@ func AddRYF(emailAddr string) error {
 		return SetRYF(emailAddr)
 	}
 
+	for _, v := range ryf.Users {
+		if v == emailAddr {
+			return fmt.Errorf("duplicate email address: %s", emailAddr)
+		}
+	}
 	ryf.Users = append(ryf.Users, emailAddr)
 	data, _ := json.Marshal(ryf)
 	return set(ryfKey, data)

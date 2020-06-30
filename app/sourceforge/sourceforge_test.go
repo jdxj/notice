@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/jdxj/notice/config"
+
 	"github.com/jdxj/notice/client"
 )
 
@@ -160,8 +162,14 @@ func TestReadCDATA(t *testing.T) {
 }
 
 func TestRaphael_SendUpdate(t *testing.T) {
-	r := NewSourceforge("", nil)
+	sfCfg, err := config.GetSourceforge()
+	if err != nil {
+		t.Fatalf("%s\n", err)
+	}
 
-	r.UpdateItem()
-	r.SendUpdate()
+	for _, v := range sfCfg.SubsAddr {
+		r := NewSourceforge(v)
+		r.UpdateItem()
+		r.SendUpdate()
+	}
 }

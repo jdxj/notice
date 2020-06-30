@@ -11,7 +11,14 @@ var (
 	scheduler = cron.New()
 )
 
-func Start() error {
+type Selected struct {
+	Neo  bool
+	Bili bool
+	Ryf  bool
+	Sf   bool
+}
+
+func Start(sel *Selected) error {
 	// 获取配置 ----------------------------------
 	sfCfg, err := config.GetSourceforge()
 	if err != nil {
@@ -20,17 +27,25 @@ func Start() error {
 	// -----------------------------------------
 
 	// 注册任务 ------------------------------------------------------
-	if err := addNeoTask(); err != nil {
-		return err
+	if sel.Neo {
+		if err := addNeoTask(); err != nil {
+			return err
+		}
 	}
-	if err := addMultiSourceforgeTask(sfCfg); err != nil {
-		return err
+	if sel.Sf {
+		if err := addMultiSourceforgeTask(sfCfg); err != nil {
+			return err
+		}
 	}
-	if err := addRuanYiFengTask(); err != nil {
-		return err
+	if sel.Ryf {
+		if err := addRuanYiFengTask(); err != nil {
+			return err
+		}
 	}
-	if err := addBiliBiliTask(); err != nil {
-		return err
+	if sel.Bili {
+		if err := addBiliBiliTask(); err != nil {
+			return err
+		}
 	}
 	// -------------------------------------------------------------
 

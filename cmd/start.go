@@ -31,13 +31,17 @@ var startCmd = &cobra.Command{
 	Use:   "start",
 	Short: "run task",
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := scheduler.Start(); err != nil {
+		if err := scheduler.Start(sel); err != nil {
 			fmt.Fprintf(os.Stderr, "start tasks failed: %s\n", err)
 			return
 		}
 		block()
 	},
 }
+
+var (
+	sel = &scheduler.Selected{}
+)
 
 func init() {
 	rootCmd.AddCommand(startCmd)
@@ -51,6 +55,11 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// startCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+
+	startCmd.Flags().BoolVarP(&sel.Bili, "bili", "b", false, "enable bilibili")
+	startCmd.Flags().BoolVarP(&sel.Neo, "neo", "n", false, "enable neo")
+	startCmd.Flags().BoolVarP(&sel.Ryf, "ryf", "r", false, "enable ruanyifeng")
+	startCmd.Flags().BoolVarP(&sel.Sf, "sourceforge", "s", false, "enable sourceforge")
 }
 
 // cron 任务在其他 goroutine 中, 这里用于阻塞和接收停止信号

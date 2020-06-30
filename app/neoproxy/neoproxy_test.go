@@ -5,8 +5,6 @@ import (
 	"sync"
 	"testing"
 	"time"
-
-	"github.com/jdxj/notice/config"
 )
 
 func TestTimeFormat(t *testing.T) {
@@ -57,74 +55,6 @@ func TestNews_String(t *testing.T) {
 }
 
 func TestFlow_VerifyLogin(t *testing.T) {
-	flow, err := NewFlow()
-	if err != nil {
-		t.Fatalf("%s\n", err)
-	}
-	if err := flow.VerifyLogin(); err != nil {
-		t.Fatalf("%s\n", err)
-	}
-
-	flow.UpdateDosage()
-	flow.SendDosage()
-}
-
-func TestFlow_CrawlLastNews(t *testing.T) {
-	flow, err := NewFlow()
-	if err != nil {
-		t.Fatalf("%s\n", err)
-	}
-
-	if err := flow.VerifyLogin(); err != nil {
-		t.Fatalf("%s\n", err)
-	}
-
-	flow.CrawlLastNews()
-}
-
-func TestNeoConfig(t *testing.T) {
-	neo := &config.Neo{
-		Host:     "https://neogate.co",
-		Domain:   ".neogate.co",
-		Cookies:  "",
-		Services: "",
-		User:     "985759262@qq.com",
-	}
-	if err := config.SetNeo(neo); err != nil {
-		t.Fatalf("%s\n", err)
-	}
-	config.Close()
-	//fmt.Printf("%v", *neoProxyCfg)
-}
-
-func TestTimeEqual(t *testing.T) {
-	now := time.Now()
-	if now != now {
-		t.Fatalf("%s", "time can not compare")
-	}
-}
-
-func TestDecodeEmail(t *testing.T) {
-	//address, err := decodeEmail("a990919c9e9c909b9f9be9d8d887cac6c4")
-	address, err := decodeEmail("d1e8e9e4e6e4e8e3e7e391a0a0ffb2bebc")
-	if err != nil {
-		t.Fatalf("%s\n", err)
-	}
-	if address != "985759262@qq.com" {
-		t.Fatalf("decode failed\n")
-	}
-}
-
-func TestFlow_SendLastNews(t *testing.T) {
-	flow, err := NewFlow()
-	if err != nil {
-		t.Fatalf("%s\n", err)
-	}
-
-	if err := flow.VerifyLogin(); err != nil {
-		t.Fatalf("%s\n", err)
-	}
-
-	flow.CrawlLastNews()
-	flow.SendLastNews()
+	flow := NewFlow()
+	flow.NotifyDosage()
 }

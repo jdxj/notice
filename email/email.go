@@ -5,6 +5,8 @@ import (
 	"net/smtp"
 	"os"
 
+	"github.com/astaxie/beego/logs"
+
 	"github.com/jdxj/notice/config"
 
 	"github.com/jordan-wright/email"
@@ -29,13 +31,19 @@ var (
 func init() {
 	cfg, err := config.GetEmail()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[Error] can not get email config: %s\n\n", err)
+		fmt.Fprintf(os.Stderr, "[Warn] can not get email config: %s\n\n", err)
 		return
 	}
 	emailCfg = cfg
 }
 
 func send(format ContentFormat, subject string, data []byte, to ...string) error {
+	if emailCfg == nil {
+		logs.Warn("email config not found, format: %d, subject: %s, data: %s, to: %v",
+			format, subject, data, to)
+		return nil
+	}
+
 	e := email.NewEmail()
 	e.Subject = subject
 	e.From = fmt.Sprintf("notice <%s>", emailCfg.Addr)

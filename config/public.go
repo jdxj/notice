@@ -1,6 +1,9 @@
 package config
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/astaxie/beego/logs"
 	"github.com/dgraph-io/badger/v2"
 )
@@ -19,7 +22,8 @@ func init() {
 
 	db, err := badger.Open(opt)
 	if err != nil {
-		panic(err)
+		fmt.Fprintf(os.Stderr, "[Error] can not open cache: %s\n\n", err)
+		return
 	}
 	badgerDB = db
 }
