@@ -31,21 +31,25 @@ func Start(sel *Selected) error {
 		if err := addNeoTask(); err != nil {
 			return err
 		}
+		logs.Info("add neo task success")
 	}
 	if sel.Sf {
 		if err := addMultiSourceforgeTask(sfCfg); err != nil {
 			return err
 		}
+		logs.Info("add sourceforge task success")
 	}
 	if sel.Ryf {
 		if err := addRuanYiFengTask(); err != nil {
 			return err
 		}
+		logs.Info("add ruanyifeng task success")
 	}
 	if sel.Bili {
 		if err := addBiliBiliTask(); err != nil {
 			return err
 		}
+		logs.Info("add bilibili task success")
 	}
 	// -------------------------------------------------------------
 
