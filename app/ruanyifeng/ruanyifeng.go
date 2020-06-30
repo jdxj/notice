@@ -6,18 +6,18 @@ import (
 	"net/http/cookiejar"
 	"sync"
 
-	"github.com/astaxie/beego/logs"
-	"github.com/jdxj/notice/client"
-
 	"github.com/jdxj/notice/config"
 	"github.com/jdxj/notice/email"
+
+	"github.com/astaxie/beego/logs"
+	"github.com/jdxj/notice/client"
 )
 
 const (
 	RSSURL = "http://www.ruanyifeng.com/blog/atom.xml"
 )
 
-func NewRuanYiFeng(emailCfg *config.Email) *RuanYiFeng {
+func NewRuanYiFeng() *RuanYiFeng {
 	jar, _ := cookiejar.New(nil)
 	c := &http.Client{
 		Jar: jar,
@@ -25,7 +25,6 @@ func NewRuanYiFeng(emailCfg *config.Email) *RuanYiFeng {
 
 	ryf := &RuanYiFeng{
 		client:     c,
-		sender:     email.NewSender(emailCfg),
 		entryMutex: &sync.Mutex{},
 	}
 	return ryf
@@ -33,7 +32,6 @@ func NewRuanYiFeng(emailCfg *config.Email) *RuanYiFeng {
 
 type RuanYiFeng struct {
 	client *http.Client
-	sender *email.Sender
 
 	// entryMutex 保护以下字段
 	entryMutex *sync.Mutex
@@ -82,9 +80,14 @@ func (ryf *RuanYiFeng) SendUpdate() {
 	subject := fmt.Sprintf("<阮一峰的网络日志> 已更新")
 	content := entry.Content.Data
 
-	sender := ryf.sender
-	if err := sender.SendHTMLSelfBytes(subject, content); err != nil {
-		logs.Error("send entry failed: %s", err)
+	ds := config.DataStorage
+	ryfCfg, err := ds.GetRYF()
+	if err != nil {
+		logs.Error("get ryf config failed: %s", err)
 		return
+	}
+	if err := email.SendHTMLBytes(subject, content, ryfCfg.Users...); err != nil {
+		logs.Error("send html by bytes failed, subject: %s, content: %s",
+			subject, content)
 	}
 }

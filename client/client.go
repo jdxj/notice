@@ -43,6 +43,13 @@ func NewRequestUserAgentGet(url string) (*http.Request, error) {
 	return NewRequestUserAgent(http.MethodGet, url, nil)
 }
 
+func NewJarCookie(URL *url.URL, cookiesStr, domain string) *cookiejar.Jar {
+	cookies := StringToCookies(cookiesStr, domain)
+	jar, _ := cookiejar.New(nil)
+	jar.SetCookies(URL, cookies)
+	return jar
+}
+
 func StringToCookies(cookiesStr, domain string) []*http.Cookie {
 	// 过滤引号
 	cookiesStr = strings.ReplaceAll(cookiesStr, `"`, ``)

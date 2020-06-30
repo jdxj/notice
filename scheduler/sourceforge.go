@@ -7,21 +7,21 @@ import (
 	"github.com/jdxj/notice/app/sourceforge"
 )
 
-func addMultiSourceforgeTask(sfCfg *config.Sourceforge, emailCfg *config.Email) error {
+func addMultiSourceforgeTask(sfCfg *config.Sourceforge) error {
 	if len(sfCfg.SubsAddr) <= 0 {
 		logs.Warn("have no sourceforge task")
 	}
 
 	for _, v := range sfCfg.SubsAddr {
-		if err := addSourceforgeTask(v, emailCfg); err != nil {
+		if err := addSourceforgeTask(v); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func addSourceforgeTask(url string, emailCfg *config.Email) error {
-	rap := sourceforge.NewSourceforge(url, emailCfg)
+func addSourceforgeTask(url string) error {
+	rap := sourceforge.NewSourceforge(url)
 
 	// ------------------------------------------------------------------------------
 	_, err := scheduler.AddFunc("0 */2 * * *", func() {

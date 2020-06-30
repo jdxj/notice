@@ -14,7 +14,7 @@ import (
 	"github.com/jdxj/notice/email"
 )
 
-func NewSourceforge(rssURL string, emailCfg *config.Email) *Sourceforge {
+func NewSourceforge(rssURL string) *Sourceforge {
 	jar, _ := cookiejar.New(nil)
 	c := &http.Client{
 		Jar: jar,
@@ -23,7 +23,6 @@ func NewSourceforge(rssURL string, emailCfg *config.Email) *Sourceforge {
 	r := &Sourceforge{
 		url:    rssURL,
 		client: c,
-		sender: email.NewSender(emailCfg),
 		mutex:  &sync.Mutex{},
 	}
 	return r
@@ -33,7 +32,6 @@ type Sourceforge struct {
 	url string
 
 	client *http.Client
-	sender *email.Sender
 
 	// mutex 保护以下字段
 	mutex *sync.Mutex
@@ -82,9 +80,15 @@ func (r *Sourceforge) SendUpdate() {
 	subject := fmt.Sprintf("<%s> 已更新", item.Title.Data)
 	content, _ := xml.MarshalIndent(item, "", "    ")
 
-	sender := r.sender
-	if err := sender.SendTextSelfBytes(subject, content); err != nil {
-		logs.Error("send update failed: %s", err)
+	ds := config.DataStorage
+	emailCfg, err := ds.GetEmail()
+	if err != nil {
+		logs.Error("get sourceforge config failed: %s", err)
 		return
+	}
+
+	if err := email.SendTextBytes(subject, content, emailCfg.Addr); err != nil {
+		logs.Error("send text by bytes failed, subject: %s, content: %s",
+			subject, content)
 	}
 }

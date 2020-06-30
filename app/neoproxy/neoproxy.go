@@ -3,12 +3,13 @@ package neoproxy
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/jdxj/notice/client"
+
 	"github.com/jdxj/notice/config"
 	"github.com/jdxj/notice/email"
 
@@ -16,21 +17,11 @@ import (
 	"github.com/astaxie/beego/logs"
 )
 
-func NewFlow(neoCfg *config.Neo, emailCfg *config.Email) (*Flow, error) {
-	c := client.NewClientCookie(
-		neoCfg.Host,
-		neoCfg.Cookies,
-		neoCfg.Domain,
-	)
-
+func NewFlow() *Flow {
 	flow := &Flow{
-		client:      c,
-		sender:      email.NewSender(emailCfg),
-		neoCfg:      neoCfg,
-		dosageMutex: &sync.Mutex{},
-		newsMutex:   &sync.Mutex{},
+		c: &http.Client{},
 	}
-	return flow, nil
+	return flow
 }
 
 const (
@@ -41,25 +32,48 @@ const (
 )
 
 type Flow struct {
-	client *http.Client
-	sender *email.Sender
-
-	neoCfg *config.Neo
-
-	// dosageMutex 保护以下字段
-	dosageMutex *sync.Mutex
-	lables      []string
-	stat        map[string]float64
+	c      *http.Client
+	lables []string
+	stat   map[string]float64
 
 	// newsMutex 保护以下字段
-	newsMutex *sync.Mutex
-	news      *News
-	newsTitle string
+	//newsMutex *sync.Mutex
+	//news      *News
+	//newsTitle string
 }
 
-func (flow *Flow) VerifyLogin() error {
-	cfg := flow.neoCfg
-	resp, err := flow.client.Get(cfg.Host + LoginPage)
+func (flow *Flow) NotifyDosage() {
+	ds := config.DataStorage
+	neoCfg, err := ds.GetNeo()
+	if err != nil {
+		logs.Error("get neo config failed: %s", err)
+		return
+	}
+
+	URL, err := url.Parse(neoCfg.Host)
+	if err != nil {
+		logs.Error("parse url failed: %s", err)
+		return
+	}
+
+	flow.c.Jar = client.NewJarCookie(URL, neoCfg.Cookies, neoCfg.Domain)
+	// 1.
+	if err := flow.verifyLogin(neoCfg); err != nil {
+		logs.Error("verify neo login failed: %s", err)
+		return
+	}
+	// 2.
+	if err := flow.updateDosage(neoCfg); err != nil {
+		logs.Error("update dosage failed: %s", err)
+		return
+	}
+	// 3.
+	flow.sendDosage(neoCfg.User)
+}
+
+func (flow *Flow) verifyLogin(neoCfg *config.Neo) error {
+	c := flow.c
+	resp, err := c.Get(neoCfg.Host + LoginPage)
 	if err != nil {
 		return err
 	}
@@ -81,26 +95,24 @@ func (flow *Flow) VerifyLogin() error {
 		return err
 	}
 
-	if addr != cfg.User {
+	if addr != neoCfg.User {
 		return fmt.Errorf("verify email failed")
 	}
 	return nil
 }
 
-func (flow *Flow) UpdateDosage() {
-	cfg := flow.neoCfg
-	dosageURL := cfg.Host + DosagePage + cfg.Services
-	resp, err := flow.client.Get(dosageURL)
+func (flow *Flow) updateDosage(neoCfg *config.Neo) error {
+	c := flow.c
+	dosageURL := neoCfg.Host + DosagePage + neoCfg.Services
+	resp, err := c.Get(dosageURL)
 	if err != nil {
-		logs.Error("update dosage failed: %s", err)
-		return
+		return err
 	}
 	defer resp.Body.Close()
 
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
-		logs.Error("new doc failed: %s", err)
-		return
+		return err
 	}
 
 	selection := doc.Find("script").Last()
@@ -121,8 +133,7 @@ func (flow *Flow) UpdateDosage() {
 	transfers := strings.Split(transfersStr, `,`)
 
 	if len(lables) != len(transfers) || len(lables) <= 0 {
-		logs.Error("daily data invalid")
-		return
+		return fmt.Errorf("daily data invalid")
 	}
 
 	// 保存数据
@@ -135,156 +146,35 @@ func (flow *Flow) UpdateDosage() {
 		stat[k] = dosage
 	}
 
-	// 保存采样
-	flow.dosageMutex.Lock()
 	flow.lables = lables
 	flow.stat = stat
-	flow.dosageMutex.Unlock()
+	return nil
 }
 
-func (flow *Flow) SendDosage() {
+func (flow *Flow) sendDosage(addr string) {
 	subject := "Neo Proxy 用量统计"
 	content := fmt.Sprintf("%s\n%s\n",
 		flow.TodayUsed(),
 		flow.TotalUsed())
 
-	sender := flow.sender
-	if err := sender.SendTextSelf(subject, content); err != nil {
-		logs.Error("send dosage failed: %s", err)
-		return
+	if err := email.SendText(subject, content, addr); err != nil {
+		logs.Error("send email failed, subject: %s, content: %s",
+			subject, content)
 	}
 }
 
 func (flow *Flow) TotalUsed() string {
 	var used float64
-
-	flow.dosageMutex.Lock()
 	for _, dosage := range flow.stat {
 		used += dosage
 	}
-	flow.dosageMutex.Unlock()
-
 	return fmt.Sprintf("总共用量: %.2fG", used/1024)
 }
 
 func (flow *Flow) TodayUsed() string {
 	today := time.Now().Format("Jan 02")
-	var dosage float64
-
-	flow.dosageMutex.Lock()
-	dosage = flow.stat[today]
-	flow.dosageMutex.Unlock()
-
+	dosage := flow.stat[today]
 	return fmt.Sprintf("今日用量: %.2fM", dosage)
-}
-
-func (flow *Flow) SendLastNews() {
-	var news *News
-	flow.newsMutex.Lock()
-	news = flow.news
-	flow.newsMutex.Unlock()
-
-	if news == nil {
-		return
-	}
-	// 仍是之前的消息
-	if news.Title == flow.newsTitle {
-		return
-	}
-	flow.newsTitle = news.Title
-
-	subject := "新消息"
-	content := news.String()
-
-	sender := flow.sender
-	if err := sender.SendTextSelf(subject, content); err != nil {
-		logs.Error("send last news failed: %s", err)
-		return
-	}
-}
-
-func (flow *Flow) CrawlLastNews() {
-	newsURLs, err := flow.crawlNewsList()
-	if err != nil {
-		logs.Error("crawl last news failed: %s", err)
-		return
-	}
-
-	if len(newsURLs) <= 0 {
-		logs.Warn("no news")
-		return
-	}
-	lastNewsURL := newsURLs[0]
-	resp, err := flow.client.Get(lastNewsURL)
-	if err != nil {
-		logs.Error("get failed: %s", err)
-		return
-	}
-	defer resp.Body.Close()
-
-	doc, err := goquery.NewDocumentFromReader(resp.Body)
-	if err != nil {
-		logs.Error("new doc failed: %s", err)
-		return
-	}
-
-	selection := doc.Find(".card-body")
-	// 解析 title
-	title := selection.Find("h3").Text()
-	// 解析 update time
-	dateStr := selection.Find("small").Text()
-	dateStrIdx := strings.Index(dateStr, "20")
-	if dateStrIdx < 0 {
-		logs.Error("not found news's date: %s", lastNewsURL)
-		return
-	}
-
-	dateStr = dateStr[dateStrIdx:]
-	date, err := time.Parse("2006-01-02", dateStr)
-	if err != nil {
-		logs.Error("parse time failed: %s", err)
-		return
-	}
-	// 解析 content
-	content := selection.Find("p").Text()
-	news := &News{
-		Title:      title,
-		UpdateTime: date,
-		Content:    content,
-	}
-
-	flow.newsMutex.Lock()
-	flow.news = news
-	flow.newsMutex.Unlock()
-}
-
-func (flow *Flow) crawlNewsList() ([]string, error) {
-	cfg := flow.neoCfg
-	resp, err := flow.client.Get(cfg.Host + NewsPage)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	doc, err := goquery.NewDocumentFromReader(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	selection := doc.Find(".list-group-item-action")
-
-	var newsURLs []string
-	selection.Each(func(i int, sel *goquery.Selection) {
-		newsURL, exist := sel.Attr("href")
-		if !exist {
-			return
-		}
-
-		newsURL = cfg.Host + newsURL
-		newsURLs = append(newsURLs, newsURL)
-	})
-
-	return newsURLs, nil
 }
 
 func decodeEmail(cipher string) (string, error) {

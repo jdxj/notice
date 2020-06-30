@@ -15,35 +15,23 @@ func Start() error {
 	ds := config.DataStorage
 
 	// 获取配置 ----------------------------------
-	neoCfg, err := ds.GetNeo()
-	if err != nil {
-		return err
-	}
-	emailCfg, err := ds.GetEmail()
-	if err != nil {
-		return err
-	}
 	sfCfg, err := ds.GetSourceforge()
-	if err != nil {
-		return err
-	}
-	biliCfg, err := ds.GetBiliBili()
 	if err != nil {
 		return err
 	}
 	// -----------------------------------------
 
 	// 注册任务 ------------------------------------------------------
-	if err := addNeoTask(neoCfg, emailCfg); err != nil {
+	if err := addNeoTask(); err != nil {
 		return err
 	}
-	if err := addMultiSourceforgeTask(sfCfg, emailCfg); err != nil {
+	if err := addMultiSourceforgeTask(sfCfg); err != nil {
 		return err
 	}
-	if err := addRuanYiFengTask(emailCfg); err != nil {
+	if err := addRuanYiFengTask(); err != nil {
 		return err
 	}
-	if err := addMultiBiliBiliTask(biliCfg, emailCfg); err != nil {
+	if err := addBiliBiliTask(); err != nil {
 		return err
 	}
 	// -------------------------------------------------------------

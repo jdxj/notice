@@ -5,13 +5,17 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"net/http/cookiejar"
+	"net/url"
 	"time"
+
+	"github.com/jdxj/notice/email"
+
+	"github.com/jdxj/notice/config"
 
 	"github.com/astaxie/beego/logs"
 
 	"github.com/jdxj/notice/client"
-	"github.com/jdxj/notice/config"
-	"github.com/jdxj/notice/email"
 )
 
 const (
@@ -28,25 +32,40 @@ var (
 	ErrSigRecNotFound = fmt.Errorf("sign-in record not found")
 )
 
-func NewBiliBili(emailAddr, cookie string, emailCfg *config.Email) *BiliBili {
-	c := client.NewClientCookie(WebSite, cookie, Domain)
-
+func NewBiliBili() *BiliBili {
+	webURL, _ := url.Parse(WebSite)
 	bili := &BiliBili{
-		client:    c,
-		sender:    email.NewSender(emailCfg),
-		emailAddr: emailAddr,
+		client: &http.Client{},
+		url:    webURL,
 	}
 	return bili
 }
 
 type BiliBili struct {
 	client *http.Client
-	sender *email.Sender
-
-	emailAddr string
+	url    *url.URL
 }
 
-func (bili *BiliBili) CollectCoins() {
+func (bili *BiliBili) KeepCollect() {
+	ds := config.DataStorage
+	biliCfg, err := ds.GetBiliBili()
+	if err != nil {
+		logs.Error("get bilibili config failed: %s", err)
+		return
+	}
+
+	user := make(map[string]*cookiejar.Jar)
+	for addr, cookies := range biliCfg.Cookies {
+		jar := client.NewJarCookie(bili.url, cookies, Domain)
+		user[addr] = jar
+	}
+	for addr, jar := range user {
+		bili.client.Jar = jar
+		bili.collectCoins(addr)
+	}
+}
+
+func (bili *BiliBili) collectCoins(addr string) {
 	// 1.
 	if err := bili.verifyLogin(); err != nil {
 		logs.Error("verify login failed: %s", err)
@@ -66,17 +85,15 @@ func (bili *BiliBili) CollectCoins() {
 
 		subject := "<BiliBili Coins Number>"
 		content := fmt.Sprintf("没有查询到最新硬币余量")
-
-		sender := bili.sender
-		if err := sender.SendTextOther(subject, content, bili.emailAddr); err != nil {
-			logs.Error("%s", err)
-			return
+		if err := email.SendText(subject, content, addr); err != nil {
+			logs.Error("send email failed, subject: %s, content: %s",
+				subject, content)
 		}
-	} else {
-		if err := bili.sendCoinsNum(); err != nil {
-			logs.Error("%s", err)
-			return
-		}
+		return
+	}
+	// 4.
+	if err := bili.sendCoinsNum(addr); err != nil {
+		logs.Error("%s", err)
 	}
 }
 
@@ -164,7 +181,7 @@ func (bili *BiliBili) verifyMultiCheckSign() error {
 }
 
 // 4. 发送硬币数量
-func (bili *BiliBili) sendCoinsNum() error {
+func (bili *BiliBili) sendCoinsNum(addr string) error {
 	req, _ := client.NewRequestUserAgentGet(CoinAPI)
 	data, err := client.ReadResponseBody(bili.client, req)
 	if err != nil {
@@ -186,7 +203,5 @@ func (bili *BiliBili) sendCoinsNum() error {
 
 	subject := fmt.Sprintf("<BiliBili Coins Number>")
 	content := fmt.Sprintf("硬币余额: %d", coinIfo.Money)
-
-	sender := bili.sender
-	return sender.SendTextOther(subject, content, bili.emailAddr)
+	return email.SendText(subject, content, addr)
 }

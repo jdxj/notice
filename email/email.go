@@ -21,22 +21,20 @@ const (
 	Html
 )
 
-func NewSender(cfg *config.Email) *Sender {
-	sender := &Sender{
-		e:        email.NewEmail(),
-		emailCfg: cfg,
-	}
-	return sender
-}
-
-type Sender struct {
-	e        *email.Email
+var (
 	emailCfg *config.Email
+)
+
+func init() {
+	var err error
+	ds := config.DataStorage
+	emailCfg, err = ds.GetEmail()
+	if err != nil {
+		panic(err)
+	}
 }
 
-func (s *Sender) Send(format ContentFormat, subject string, data []byte, to ...string) error {
-	emailCfg := s.emailCfg
-
+func send(format ContentFormat, subject string, data []byte, to ...string) error {
 	e := email.NewEmail()
 	e.Subject = subject
 	e.From = fmt.Sprintf("notice <%s>", emailCfg.Addr)
@@ -52,25 +50,18 @@ func (s *Sender) Send(format ContentFormat, subject string, data []byte, to ...s
 	return e.Send(addr, smtp.PlainAuth("", emailCfg.Addr, emailCfg.Token, host))
 }
 
-func (s *Sender) SendTextSelf(subject, content string) error {
-	emailCfg := s.emailCfg
-	return s.Send(Text, subject, []byte(content), emailCfg.Addr)
-}
-func (s *Sender) SendTextSelfBytes(subject string, content []byte) error {
-	emailCfg := s.emailCfg
-	return s.Send(Text, subject, content, emailCfg.Addr)
+func SendText(subject, content string, to ...string) error {
+	return send(Text, subject, []byte(content), to...)
 }
 
-func (s *Sender) SendHTMLSelf(subject, content string) error {
-	emailCfg := s.emailCfg
-	return s.Send(Html, subject, []byte(content), emailCfg.Addr)
+func SendTextBytes(subject string, content []byte, to ...string) error {
+	return send(Text, subject, content, to...)
 }
 
-func (s *Sender) SendHTMLSelfBytes(subject string, content []byte) error {
-	emailCfg := s.emailCfg
-	return s.Send(Html, subject, content, emailCfg.Addr)
+func SendHTML(subject, content string, to ...string) error {
+	return send(Html, subject, []byte(content), to...)
 }
 
-func (s *Sender) SendTextOther(subject, content string, to ...string) error {
-	return s.Send(Text, subject, []byte(content), to...)
+func SendHTMLBytes(subject string, content []byte, to ...string) error {
+	return send(Html, subject, content, to...)
 }
