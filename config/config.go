@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/astaxie/beego/logs"
 	"github.com/dgraph-io/badger/v2"
 )
 
@@ -23,10 +24,8 @@ func NewCache(path string) (*Cache, error) {
 	return cache, nil
 }
 
-func (c *Cache) Get(key []byte) ([]byte, error) {
-	var value []byte
-
-	err := c.db.View(func(txn *badger.Txn) error {
+func (c *Cache) Get(key []byte) (value []byte, err error) {
+	err = c.db.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(key)
 		if err != nil {
 			return err
@@ -40,15 +39,14 @@ func (c *Cache) Get(key []byte) ([]byte, error) {
 }
 
 func (c *Cache) Set(key, value []byte) error {
-	if err := c.db.Update(func(txn *badger.Txn) error {
+	return c.db.Update(func(txn *badger.Txn) error {
 		return txn.Set(key, value)
-	}); err != nil {
-		return err
-	}
-
-	return c.db.Sync()
+	})
 }
 
 func (c *Cache) Close() error {
+	if err := c.db.Sync(); err != nil {
+		logs.Error("sync cache failed: %s", err)
+	}
 	return c.db.Close()
 }

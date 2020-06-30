@@ -64,20 +64,14 @@ func init() {
 }
 
 func printConfig(vf *viewFlags) {
-	cache, err := config.NewCache(config.CachePath)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "new cache failed: %s\n", err)
-		return
-	}
-	defer cache.Close()
-
+	ds := config.DataStorage
 	var result string
 	defer func() {
 		fmt.Printf("%s\n", result)
 	}()
 
 	if vf.bilibiliFlag {
-		b, err := cache.GetBiliBili()
+		b, err := ds.GetBiliBili()
 		if err != nil {
 			if err != badger.ErrKeyNotFound {
 				fmt.Fprintf(os.Stderr, "%s\n", err)
@@ -88,7 +82,7 @@ func printConfig(vf *viewFlags) {
 	}
 
 	if vf.neoFlag {
-		n, err := cache.GetNeo()
+		n, err := ds.GetNeo()
 		if err != nil {
 			if err != badger.ErrKeyNotFound {
 				fmt.Fprintf(os.Stderr, "%s\n", err)
@@ -99,7 +93,7 @@ func printConfig(vf *viewFlags) {
 	}
 
 	if vf.sourceforgeFlag {
-		s, err := cache.GetSourceforge()
+		s, err := ds.GetSourceforge()
 		if err != nil {
 			if err != badger.ErrKeyNotFound {
 				fmt.Fprintf(os.Stderr, "%s\n", err)

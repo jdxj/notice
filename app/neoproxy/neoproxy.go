@@ -140,7 +140,6 @@ func (flow *Flow) UpdateDosage() {
 	flow.lables = lables
 	flow.stat = stat
 	flow.dosageMutex.Unlock()
-
 }
 
 func (flow *Flow) SendDosage() {

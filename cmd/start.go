@@ -64,5 +64,4 @@ func block() {
 	}
 
 	scheduler.Stop()
-	logs.GetBeeLogger().Close()
 }

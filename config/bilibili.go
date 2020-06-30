@@ -30,7 +30,7 @@ func (c *Cache) GetBiliBili() (*BiliBili, error) {
 	return bili, json.Unmarshal(data, bili)
 }
 
-func (c *Cache) SetCookie(emailAddr, cookie string) error {
+func (c *Cache) SetBiliCookie(emailAddr, cookie string) error {
 	bili := &BiliBili{}
 	bili.Cookies = map[string]string{
 		emailAddr: cookie,
@@ -39,7 +39,7 @@ func (c *Cache) SetCookie(emailAddr, cookie string) error {
 	return c.Set(bilibiliKey, data)
 }
 
-func (c *Cache) AddCookie(emailAddr, cookie string) error {
+func (c *Cache) AddBiliCookie(emailAddr, cookie string) error {
 	if emailAddr == "" || cookie == "" {
 		return fmt.Errorf("email or cookie is empty")
 	}
@@ -49,8 +49,7 @@ func (c *Cache) AddCookie(emailAddr, cookie string) error {
 		if err != badger.ErrKeyNotFound {
 			return fmt.Errorf("add cookie failed: %s", err)
 		}
-
-		return c.SetCookie(emailAddr, cookie)
+		return c.SetBiliCookie(emailAddr, cookie)
 	}
 
 	bili.Cookies[emailAddr] = cookie

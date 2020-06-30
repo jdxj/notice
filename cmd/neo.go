@@ -29,7 +29,8 @@ var neoCmd = &cobra.Command{
 	Use:   "neo",
 	Short: "set neo config",
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := config.SetNeo(neoFlags); err != nil {
+		ds := config.DataStorage
+		if err := ds.SetNeo(neoFlags); err != nil {
 			fmt.Fprintf(os.Stderr, "set neo config failed: %s\n", err)
 		} else {
 			fmt.Printf("set neo config success\n")

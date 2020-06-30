@@ -12,26 +12,22 @@ var (
 )
 
 func Start() error {
-	cache, err := config.NewCache(config.CachePath)
-	if err != nil {
-		return err
-	}
-	defer cache.Close()
+	ds := config.DataStorage
 
 	// 获取配置 ----------------------------------
-	neoCfg, err := cache.GetNeo()
+	neoCfg, err := ds.GetNeo()
 	if err != nil {
 		return err
 	}
-	emailCfg, err := cache.GetEmail()
+	emailCfg, err := ds.GetEmail()
 	if err != nil {
 		return err
 	}
-	sfCfg, err := cache.GetSourceforge()
+	sfCfg, err := ds.GetSourceforge()
 	if err != nil {
 		return err
 	}
-	biliCfg, err := cache.GetBiliBili()
+	biliCfg, err := ds.GetBiliBili()
 	if err != nil {
 		return err
 	}

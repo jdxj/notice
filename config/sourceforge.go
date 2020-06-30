@@ -30,14 +30,14 @@ func (c *Cache) GetSourceforge() (*Sourceforge, error) {
 	return sf, json.Unmarshal(data, sf)
 }
 
-func (c *Cache) SetSubsAddr(rssURL string) error {
+func (c *Cache) SetSFSubsAddr(rssURL string) error {
 	sf := &Sourceforge{}
 	sf.SubsAddr = append(sf.SubsAddr, rssURL)
 	data, _ := json.Marshal(sf)
 	return c.Set(sourceforgeKey, data)
 }
 
-func (c *Cache) AddSubsAddr(rssURL string) error {
+func (c *Cache) AddSFSubsAddr(rssURL string) error {
 	// url 检查
 	if rssURL == "" {
 		return fmt.Errorf("rss address invalid")
@@ -48,8 +48,7 @@ func (c *Cache) AddSubsAddr(rssURL string) error {
 		if err != badger.ErrKeyNotFound {
 			return fmt.Errorf("add subscription address failed: %s", err)
 		}
-
-		return c.SetSubsAddr(rssURL)
+		return c.SetSFSubsAddr(rssURL)
 	}
 
 	// 查重
@@ -58,7 +57,6 @@ func (c *Cache) AddSubsAddr(rssURL string) error {
 			return fmt.Errorf("duplicate subscription address: %s", rssURL)
 		}
 	}
-
 	sf.SubsAddr = append(sf.SubsAddr, rssURL)
 	data, _ := json.Marshal(sf)
 	return c.Set(sourceforgeKey, data)
