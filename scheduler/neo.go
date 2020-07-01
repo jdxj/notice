@@ -10,8 +10,8 @@ func addNeoTask() error {
 	flow := neoproxy.NewFlow()
 
 	// ------------------------------------------------------------------------------
-	_, err := scheduler.AddFunc("0 * * * *", func() {
-		logs.Info("execute neo 'update dosage' and 'crawl news' task")
+	_, err := scheduler.AddFunc("0 23 * * *", func() {
+		logs.Info("execute neo 'update dosage' task")
 
 		flow.NotifyDosage()
 	})

@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/astaxie/beego/logs"
+
 	"github.com/jdxj/notice/cmd"
 	"github.com/jdxj/notice/config"
 )
