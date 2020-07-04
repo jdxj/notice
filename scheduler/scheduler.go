@@ -16,6 +16,7 @@ type Selected struct {
 	Bili bool
 	Ryf  bool
 	Sf   bool
+	Lt   bool
 }
 
 func Start(sel *Selected) error {
@@ -50,6 +51,12 @@ func Start(sel *Selected) error {
 			return err
 		}
 		logs.Info("add bilibili task success")
+	}
+	if sel.Lt {
+		if err := addLianTongTask(); err != nil {
+			return err
+		}
+		logs.Info("add liantong task success")
 	}
 	// -------------------------------------------------------------
 

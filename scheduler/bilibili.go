@@ -12,8 +12,5 @@ func addBiliBiliTask() error {
 
 		bili.KeepCollect()
 	})
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }

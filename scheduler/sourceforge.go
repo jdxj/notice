@@ -39,9 +39,5 @@ func addSourceforgeTask(url string) error {
 
 		rap.SendUpdate()
 	})
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }

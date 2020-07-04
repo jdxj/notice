@@ -60,6 +60,7 @@ func init() {
 	startCmd.Flags().BoolVarP(&sel.Neo, "neo", "n", false, "enable neo")
 	startCmd.Flags().BoolVarP(&sel.Ryf, "ryf", "r", false, "enable ruanyifeng")
 	startCmd.Flags().BoolVarP(&sel.Sf, "sourceforge", "s", false, "enable sourceforge")
+	startCmd.Flags().BoolVarP(&sel.Lt, "liantong", "l", false, "enable liantong")
 }
 
 // cron 任务在其他 goroutine 中, 这里用于阻塞和接收停止信号

@@ -22,8 +22,5 @@ func addRuanYiFengTask() error {
 
 		ryf.SendUpdate()
 	})
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
