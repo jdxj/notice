@@ -6,10 +6,6 @@ import (
 )
 
 func TestInit(t *testing.T) {
-	err := Init()
-	if err != nil {
-		t.Fatalf("%s\n", err)
-	}
-
+	Init()
 	fmt.Printf("%+v\n", defaultConfig)
 }

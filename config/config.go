@@ -12,9 +12,10 @@ type config struct {
 
 type TelegramBot struct {
 	APIToken string `mapstructure:"api_token"`
+	ChatID   int64  `mapstructure:"chat_id"`
 }
 
-func Init(paths ...string) error {
+func Init(paths ...string) {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".")
@@ -24,8 +25,14 @@ func Init(paths ...string) error {
 
 	err := viper.ReadInConfig()
 	if err != nil {
-		return err
+		panic(err)
 	}
-	return viper.Unmarshal(&defaultConfig)
+	err = viper.Unmarshal(&defaultConfig)
+	if err != nil {
+		panic(err)
+	}
 }
 
+func GetTelegramBot() TelegramBot {
+	return defaultConfig.TelegramBot
+}
