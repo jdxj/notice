@@ -22,3 +22,5 @@
 
 # cache
 cache.db/
+
+config/config.yaml
