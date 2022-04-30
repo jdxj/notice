@@ -7,22 +7,19 @@ import (
 )
 
 var (
-	bot       *tgbotapi.BotAPI
-	botConfig config.TelegramBot
+	bot *tgbotapi.BotAPI
 )
 
-func Init() {
+func init() {
 	var err error
-
-	botConfig = config.GetTelegramBot()
-	bot, err = tgbotapi.NewBotAPI(botConfig.APIToken)
+	bot, err = tgbotapi.NewBotAPI(config.TelegramBot.APIToken)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func SendMessage(txt string) (err error) {
-	msg := tgbotapi.NewMessage(botConfig.ChatID, txt)
+	msg := tgbotapi.NewMessage(config.TelegramBot.ChatID, txt)
 	_, err = bot.Send(msg)
 	return
 }

@@ -6,6 +6,6 @@ import (
 )
 
 func TestInit(t *testing.T) {
-	Init()
-	fmt.Printf("%+v\n", defaultConfig)
+	fmt.Printf("%+v, %+v\n", cw.TelegramBot, cw.Github)
+	fmt.Printf("%+v, %+v\n", TelegramBot, Github)
 }
