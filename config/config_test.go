@@ -8,4 +8,5 @@ import (
 func TestInit(t *testing.T) {
 	fmt.Printf("%+v, %+v\n", cw.TelegramBot, cw.Github)
 	fmt.Printf("%+v, %+v\n", TelegramBot, Github)
+	fmt.Printf("%+v\n", Github)
 }

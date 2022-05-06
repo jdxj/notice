@@ -35,10 +35,6 @@ type telegramBot struct {
 	ChatID   int64  `mapstructure:"chat_id"`
 }
 
-type github struct {
-	PersonalAccessToken string `mapstructure:"personal_access_token"`
-}
-
 func init() {
 	configPath := os.Getenv(configPathEnv)
 	if configPath == "" {
