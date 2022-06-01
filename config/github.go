@@ -3,8 +3,6 @@ package config
 type github struct {
 	// https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token
 	PersonalAccessToken string `mapstructure:"personal_access_token"`
-	// 秒
-	Interval int `mapstructure:"interval"`
 
 	// 要 watch 的事件
 	// 每个仓库使用 owner/repo 格式
