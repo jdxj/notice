@@ -11,7 +11,7 @@ import (
 )
 
 type status struct {
-	url     string
+	key     string
 	publish time.Time
 }
 
@@ -64,7 +64,7 @@ func (r *RSS) getURLs() {
 		if _, ok := r.urls[url]; ok {
 			continue
 		}
-		r.urls[url] = &status{url: url}
+		r.urls[url] = &status{key: url}
 	}
 }
 
