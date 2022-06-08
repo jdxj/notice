@@ -1,8 +1,6 @@
 package main
 
 import (
-	"log"
-
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"github.com/jdxj/notice/config"
@@ -18,7 +16,6 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	log.Printf("init telegram ok")
 }
 
 func SendMessage(txt string) (err error) {

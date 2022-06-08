@@ -64,6 +64,8 @@ type telegramBot struct {
 type github struct {
 	// https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token
 	PersonalAccessToken string `mapstructure:"personal_access_token"`
+
+	Spec string `mapstructure:"spec"`
 }
 
 type db struct {
