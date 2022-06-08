@@ -18,7 +18,6 @@ spec:
         - name: notice-c
           image: jdxj/notice:test-2dbbc59
           command: [ "/notice/notice.out" ]
-          # args: [ "--config", "/jike-bot/config/config.yaml" ]
           volumeMounts:
             - mountPath: /notice/config
               name: notice-config
