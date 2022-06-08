@@ -1,15 +1,5 @@
-localName = notice.out
-linuxName = notice_linux.out
-macName = notice_mac.out
-
-local: clean
-	go build -ldflags '-s -w' -o $(localName) *.go
-linux: clean
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags '-s -w' -o $(linuxName) *.go
-	upx --best $(linuxName)
-mac: clean
-	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags '-s -w' -o $(macName) *.go
-	upx --best $(macName)
-clean:
-	find . -name "*.log" | xargs rm -f
-	find . -name "*.out" | xargs rm -f
+include scripts/make-rules/common.mk
+include scripts/make-rules/tag.mk
+include scripts/make-rules/go.mk
+include scripts/make-rules/image.mk
+include scripts/make-rules/k8s.mk

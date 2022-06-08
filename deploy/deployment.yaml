@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notice-dep
+  namespace: notice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notice
+  template:
+    metadata:
+      name: notice-temp
+      labels:
+        app: notice
+    spec:
+      containers:
+        - name: notice-c
+          image: jdxj/notice:test-2dbbc59
+          command: [ "/notice/notice.out" ]
+          # args: [ "--config", "/jike-bot/config/config.yaml" ]
+          volumeMounts:
+            - mountPath: /notice/config
+              name: notice-config
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NOTICE_CONFIG
+              value: '/notice/config'
+      volumes:
+        - name: notice-config
+          secret:
+            secretName: notice-config

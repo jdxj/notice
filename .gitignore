@@ -23,4 +23,5 @@
 # cache
 cache.db/
 
-config/config.yaml
+deploy/config.yaml
+deploy/kube_config.yaml
