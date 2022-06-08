@@ -10,9 +10,13 @@ func main() {
 	r := NewRSS()
 	r.Start()
 
+	logger.Infof("started")
+
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 	<-c
-	logger.Infof("stop")
+
 	r.Stop()
+
+	logger.Infof("stopped")
 }

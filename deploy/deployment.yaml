@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: notice-c
-          image: jdxj/notice:test-2dbbc59
+          image: jdxj/notice:test-cfd2baa
           command: [ "/notice/notice.out" ]
           volumeMounts:
             - mountPath: /notice/config
