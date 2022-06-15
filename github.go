@@ -33,6 +33,22 @@ type Github struct {
 	client *github.Client
 }
 
+func (g *Github) Start() {
+	_, err := g.cron.AddFunc(config.Github.Spec, func() {
+		g.getRepos()
+		g.run()
+	})
+	if err != nil {
+		logger.Errorf("add func err: %s", err)
+		return
+	}
+	g.cron.Start()
+}
+
+func (g *Github) Stop() {
+	<-g.cron.Stop().Done()
+}
+
 type uniqueRepo struct {
 	Owner string
 	Repo  string
@@ -64,25 +80,25 @@ func (g *Github) getRepos() {
 func (g *Github) run() {
 	for key, status := range g.repos {
 		ur := strings.Split(key, "/")
-		rl, _, err := g.client.Repositories.ListReleases(context.Background(), ur[0], ur[1], nil)
+		releases, _, err := g.client.Repositories.ListReleases(context.Background(), ur[0], ur[1], nil)
 		if err != nil {
 			logger.Errorf("list releases err: %s", err)
 			continue
 		}
 
-		if len(rl) == 0 {
+		if len(releases) == 0 {
 			logger.Warnf("releases not found: %s", key)
 			continue
 		}
 
-		t := rl[0].GetPublishedAt()
-		if /*!status.publish.IsZero() &&*/ t.After(status.publish) {
-			err := SendMessage(fmt.Sprintf("%s is updated", key))
+		release := releases[0]
+		if !status.publish.IsZero() && release.GetPublishedAt().After(status.publish) {
+			err := SendMessage(fmt.Sprintf("%s is updated: %s", key, release.GetTagName()))
 			if err != nil {
 				logger.Errorf("send message err: %s", err)
 			}
 		}
 
-		status.publish = t.Time
+		status.publish = release.GetPublishedAt().Time
 	}
 }

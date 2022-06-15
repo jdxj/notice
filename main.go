@@ -10,6 +10,9 @@ func main() {
 	r := NewRSS()
 	r.Start()
 
+	g := NewGithub()
+	g.Start()
+
 	logger.Infof("started")
 
 	c := make(chan os.Signal, 1)
@@ -17,6 +20,7 @@ func main() {
 	<-c
 
 	r.Stop()
+	g.Stop()
 
 	logger.Infof("stopped")
 }
