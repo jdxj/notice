@@ -1,9 +1,8 @@
-package main
+package util
 
 import (
 	"fmt"
 
-	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
@@ -11,7 +10,7 @@ import (
 )
 
 var (
-	db *gorm.DB
+	DB *gorm.DB
 )
 
 func init() {
@@ -20,12 +19,7 @@ func init() {
 		dbConfig.User, dbConfig.Pass, dbConfig.Host, dbConfig.Port, dbConfig.Name)
 
 	var err error
-	db, err = gorm.Open(mysql.Open(dsn))
-	if err != nil {
-		panic(err)
-	}
-
-	l, err := zap.NewProduction()
+	DB, err = gorm.Open(mysql.Open(dsn))
 	if err != nil {
 		panic(err)
 	}

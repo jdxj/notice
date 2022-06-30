@@ -1,4 +1,4 @@
-package main
+package github
 
 import (
 	"context"
@@ -12,7 +12,14 @@ import (
 
 	"github.com/jdxj/notice/config"
 	"github.com/jdxj/notice/logger"
+	"github.com/jdxj/notice/model/telegram"
+	"github.com/jdxj/notice/util"
 )
+
+type status struct {
+	key     string
+	publish time.Time
+}
 
 func NewGithub() *Github {
 	ts := oauth2.StaticTokenSource(&oauth2.Token{
@@ -60,7 +67,7 @@ func (g *Github) getRepos() {
 	defer cancel()
 
 	var repos []uniqueRepo
-	err := db.WithContext(ctx).
+	err := util.DB.WithContext(ctx).
 		Table("github").
 		Select("owner, repo").
 		Find(&repos).Error
@@ -94,7 +101,7 @@ func (g *Github) run() {
 
 		release := releases[0]
 		if !status.publish.IsZero() && release.GetPublishedAt().After(status.publish) {
-			err := SendMessage(fmt.Sprintf("%s is updated: %s", key, release.GetTagName()))
+			err := telegram.SendMessage(fmt.Sprintf("%s is updated: %s", key, release.GetTagName()))
 			if err != nil {
 				logger.Errorf("send message err: %s", err)
 			}

@@ -1,6 +1,8 @@
-package main
+package github
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestGithub_T(t *testing.T) {
 	g := NewGithub()

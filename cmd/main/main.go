@@ -4,13 +4,17 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/jdxj/notice/logger"
+	"github.com/jdxj/notice/model/github"
+	"github.com/jdxj/notice/model/rss"
 )
 
 func main() {
-	r := NewRSS()
+	r := rss.NewRSS()
 	r.Start()
 
-	g := NewGithub()
+	g := github.NewGithub()
 	g.Start()
 
 	logger.Infof("started")

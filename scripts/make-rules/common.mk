@@ -1,6 +1,7 @@
 FILENAME := notice.out
 DOCKER := docker
 OUTPUT := output
+MAIN := cmd/main
 DEPLOY := deploy
 
 GIT_TAG := $(shell git describe --tags --abbrev=0)

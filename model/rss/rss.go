@@ -1,4 +1,4 @@
-package main
+package rss
 
 import (
 	"context"
@@ -9,6 +9,8 @@ import (
 
 	"github.com/jdxj/notice/config"
 	"github.com/jdxj/notice/logger"
+	"github.com/jdxj/notice/model/telegram"
+	"github.com/jdxj/notice/util"
 )
 
 type status struct {
@@ -52,7 +54,7 @@ func (r *RSS) getURLs() {
 	defer cancel()
 
 	var urls []string
-	err := db.WithContext(ctx).
+	err := util.DB.WithContext(ctx).
 		Table("rss_urls").
 		Select("url").
 		Find(&urls).Error
@@ -90,7 +92,7 @@ func (r *RSS) run() {
 		}
 
 		if !status.publish.IsZero() && item.PublishedParsed.After(status.publish) {
-			err := SendMessage(item.Link)
+			err := telegram.SendMessage(item.Link)
 			if err != nil {
 				logger.Errorf("send message err: %s", err)
 			}
