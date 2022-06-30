@@ -13,6 +13,21 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           version: v1.46.2
+  testflow:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+      - run: go install github.com/jswidler/lockgit@v0.9.0
+  relytest:
+    name: rely
+    runs-on: ubuntu-latest
+    needs:
+      - testflow
+    steps:
+      - run: lockgit status
 
   deploy:
     runs-on: ubuntu-latest
