@@ -11,6 +11,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/jdxj/notice/config"
+	"github.com/jdxj/notice/logger"
 )
 
 func NewGithub() *Github {

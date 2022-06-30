@@ -8,6 +8,7 @@ import (
 	"github.com/robfig/cron/v3"
 
 	"github.com/jdxj/notice/config"
+	"github.com/jdxj/notice/logger"
 )
 
 type status struct {

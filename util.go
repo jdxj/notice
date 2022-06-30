@@ -11,8 +11,7 @@ import (
 )
 
 var (
-	db     *gorm.DB
-	logger *zap.SugaredLogger
+	db *gorm.DB
 )
 
 func init() {
@@ -30,5 +29,4 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	logger = l.Sugar()
 }
