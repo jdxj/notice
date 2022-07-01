@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 )
@@ -27,4 +28,18 @@ func TestMap(t *testing.T) {
 		}
 	}()
 	time.Sleep(time.Hour)
+}
+
+func TestSplit(t *testing.T) {
+	str := "/"
+	res := strings.Split(str, "/")
+	fmt.Printf("len: %d, res: %v\n", len(res), res)
+
+	str = "a/"
+	res = strings.Split(str, "/")
+	fmt.Printf("len: %d, res: %v\n", len(res), res)
+
+	str = ""
+	res = strings.Split(str, "/")
+	fmt.Printf("len: %d, res: %v\n", len(res), res)
 }

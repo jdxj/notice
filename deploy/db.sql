@@ -6,7 +6,7 @@ CREATE TABLE `rss_urls`
     UNIQUE KEY `rss_urls_UN` (`url`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-CREATE TABLE `github`
+CREATE TABLE `github_repos`
 (
     `id`    bigint       NOT NULL AUTO_INCREMENT,
     `owner` varchar(100) NOT NULL,

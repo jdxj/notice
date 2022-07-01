@@ -2,6 +2,7 @@ package rss
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/mmcdole/gofeed"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/jdxj/notice/config"
 	"github.com/jdxj/notice/logger"
+	"github.com/jdxj/notice/subscription"
 	"github.com/jdxj/notice/subscription/telegram"
 	"github.com/jdxj/notice/util"
 	"github.com/jdxj/notice/util/db"
@@ -89,6 +91,9 @@ type AddReq struct {
 }
 
 func Add(ctx context.Context, req *AddReq) error {
+	if !urlMap[req.URL].IsZero() {
+		return fmt.Errorf("%w: %s", subscription.ErrKeyAlreadyExisted, req.URL)
+	}
 	urlMap[req.URL] = time.Time{}
 
 	return db.WithContext(ctx).

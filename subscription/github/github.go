@@ -12,101 +12,101 @@ import (
 
 	"github.com/jdxj/notice/config"
 	"github.com/jdxj/notice/logger"
-	"github.com/jdxj/notice/model/telegram"
+	"github.com/jdxj/notice/subscription"
+	"github.com/jdxj/notice/subscription/telegram"
+	"github.com/jdxj/notice/util"
 	"github.com/jdxj/notice/util/db"
 )
 
-type status struct {
-	key     string
-	publish time.Time
-}
+var (
+	repoIDMap = make(map[string]time.Time)
+	crontab   = cron.New()
+	client    = newGithubClient()
+)
 
-func NewGithub() *Github {
+func newGithubClient() *github.Client {
 	ts := oauth2.StaticTokenSource(&oauth2.Token{
 		AccessToken: config.Github.PersonalAccessToken,
 	})
 	tc := oauth2.NewClient(context.Background(), ts)
-
-	g := &Github{
-		repos:  make(map[string]*status),
-		cron:   cron.New(),
-		client: github.NewClient(tc),
-	}
-	return g
+	return github.NewClient(tc)
 }
 
-type Github struct {
-	repos  map[string]*status
-	cron   *cron.Cron
-	client *github.Client
+func init() {
+	restore()
+	start()
 }
 
-func (g *Github) Start() {
-	_, err := g.cron.AddFunc(config.Github.Spec, func() {
-		g.getRepos()
-		g.run()
-	})
-	if err != nil {
-		logger.Errorf("add func err: %s", err)
-		return
-	}
-	g.cron.Start()
+func repoID(owner, repo string) string {
+	return fmt.Sprintf("%s/%s", owner, repo)
 }
 
-func (g *Github) Stop() {
-	<-g.cron.Stop().Done()
-}
-
-type uniqueRepo struct {
-	Owner string
-	Repo  string
-}
-
-func (g *Github) getRepos() {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+func restore() {
+	ctx, cancel := util.WithTimeout()
 	defer cancel()
 
-	var repos []uniqueRepo
+	var rows []entity
 	err := db.WithContext(ctx).
-		Table("github").
-		Select("owner, repo").
-		Find(&repos).Error
+		Model(entity{}).
+		Find(&rows).Error
 	if err != nil {
-		logger.Errorf("get repos err: %s", err)
-		return
+		logger.Panicf("restore github repos: %s", err)
 	}
 
-	for _, v := range repos {
-		key := fmt.Sprintf("%s/%s", v.Owner, v.Repo)
-		if _, ok := g.repos[key]; ok {
-			continue
-		}
-		g.repos[key] = &status{key: key}
+	for _, row := range rows {
+		repoIDMap[repoID(row.Owner, row.Repo)] = time.Time{}
 	}
 }
 
-func (g *Github) run() {
-	for key, status := range g.repos {
-		ur := strings.Split(key, "/")
-		releases, _, err := g.client.Repositories.ListReleases(context.Background(), ur[0], ur[1], nil)
+func start() {
+	_, err := crontab.AddFunc(config.Github.Spec, checkPublish)
+	if err != nil {
+		logger.Panicf("add func err: %s", err)
+	}
+
+	crontab.Start()
+	logger.Infof("github started")
+}
+
+func checkPublish() {
+	for repoID, lastPublish := range repoIDMap {
+		ur := strings.Split(repoID, "/")
+		releases, _, err := client.Repositories.ListReleases(context.Background(), ur[0], ur[1], nil)
 		if err != nil {
 			logger.Errorf("list releases err: %s", err)
 			continue
 		}
 
 		if len(releases) == 0 {
-			logger.Warnf("releases not found: %s", key)
+			logger.Warnf("releases not found: %s", repoID)
 			continue
 		}
 
 		release := releases[0]
-		if !status.publish.IsZero() && release.GetPublishedAt().After(status.publish) {
-			err := telegram.SendMessage(fmt.Sprintf("%s is updated: %s", key, release.GetTagName()))
+		if !lastPublish.IsZero() && release.GetPublishedAt().After(lastPublish) {
+			err := telegram.SendMessage(fmt.Sprintf("%s is updated: %s", repoID, release.GetTagName()))
 			if err != nil {
 				logger.Errorf("send message err: %s", err)
 			}
 		}
 
-		status.publish = release.GetPublishedAt().Time
+		repoIDMap[repoID] = release.GetPublishedAt().Time
 	}
+}
+
+type AddReq struct {
+	Owner string
+	Repo  string
+}
+
+func Add(ctx context.Context, req *AddReq) error {
+	key := repoID(req.Owner, req.Repo)
+	if !repoIDMap[key].IsZero() {
+		return fmt.Errorf("%w: %s", subscription.ErrKeyAlreadyExisted, key)
+	}
+	repoIDMap[key] = time.Time{}
+
+	return db.WithContext(ctx).
+		Create(entity{Owner: req.Owner, Repo: req.Repo}).
+		Error
 }
