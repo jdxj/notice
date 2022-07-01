@@ -13,7 +13,7 @@ import (
 	"github.com/jdxj/notice/config"
 	"github.com/jdxj/notice/logger"
 	"github.com/jdxj/notice/model/telegram"
-	"github.com/jdxj/notice/util"
+	"github.com/jdxj/notice/util/db"
 )
 
 type status struct {
@@ -67,7 +67,7 @@ func (g *Github) getRepos() {
 	defer cancel()
 
 	var repos []uniqueRepo
-	err := util.DB.WithContext(ctx).
+	err := db.WithContext(ctx).
 		Table("github").
 		Select("owner, repo").
 		Find(&repos).Error

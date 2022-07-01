@@ -1,26 +1,10 @@
 package util
 
 import (
-	"fmt"
-
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
-
-	"github.com/jdxj/notice/config"
+	"context"
+	"time"
 )
 
-var (
-	DB *gorm.DB
-)
-
-func init() {
-	dbConfig := config.DB
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		dbConfig.User, dbConfig.Pass, dbConfig.Host, dbConfig.Port, dbConfig.Name)
-
-	var err error
-	DB, err = gorm.Open(mysql.Open(dsn))
-	if err != nil {
-		panic(err)
-	}
+func WithTimeout() (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.Background(), time.Second*5)
 }

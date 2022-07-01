@@ -26,3 +26,7 @@ func Warnf(format string, args ...interface{}) {
 func Errorf(format string, args ...interface{}) {
 	logger.Errorf(format, args...)
 }
+
+func Panicf(format string, args ...interface{}) {
+	logger.Panicf(format, args...)
+}
