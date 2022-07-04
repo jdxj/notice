@@ -44,4 +44,14 @@ func Stop() {
 
 func register(root gin.IRouter) {
 	root.GET("/", hello)
+
+	rRss := root.Group("/rss_urls")
+	{
+
+	}
+
+	rGithub := root.Group("/github_repos")
+	{
+
+	}
 }
